@@ -1,0 +1,107 @@
+"""
+core.V16.charge_point — OCPP 1.6J ChargePoint (server-side).
+
+Subclasses the ``ocpp`` library's ChargePoint and registers @on handlers
+for every message a 1.6J charger might send.  Each handler delegates to
+a pure function in the sibling module so logic is testable in isolation.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from ocpp.routing import on
+from ocpp.v16 import ChargePoint as _OcppV16CP
+from ocpp.v16.enums import Action
+
+from core.V16.boot_notification import handle_boot_notification
+from core.V16.heartbeat import handle_heartbeat
+from core.V16.status_notification import handle_status_notification
+from core.V16.authorize import handle_authorize
+from core.V16.start_transaction import handle_start_transaction
+from core.V16.stop_transaction import handle_stop_transaction
+from core.V16.meter_values import handle_meter_values
+
+logger = logging.getLogger(__name__)
+
+
+class V16ChargePoint(_OcppV16CP):
+    """
+    Server-side representation of an OCPP 1.6J charge point.
+
+    Every ``@on`` handler simply forwards to the matching pure function
+    so that the echo server, the production server, and tests all share
+    the same processing logic.
+    """
+
+    # ── BootNotification ─────────────────────────────────────────────
+    @on(Action.boot_notification)
+    async def on_boot_notification(
+        self, charge_point_vendor: str, charge_point_model: str, **kwargs
+    ):
+        return handle_boot_notification(
+            charge_point_vendor=charge_point_vendor,
+            charge_point_model=charge_point_model,
+            **kwargs,
+        )
+
+    # ── Heartbeat ────────────────────────────────────────────────────
+    @on(Action.heartbeat)
+    async def on_heartbeat(self, **kwargs):
+        return handle_heartbeat(**kwargs)
+
+    # ── StatusNotification ───────────────────────────────────────────
+    @on(Action.status_notification)
+    async def on_status_notification(
+        self, connector_id: int, error_code: str, status: str, **kwargs
+    ):
+        return handle_status_notification(
+            connector_id=connector_id,
+            error_code=error_code,
+            status=status,
+            **kwargs,
+        )
+
+    # ── Authorize ────────────────────────────────────────────────────
+    @on(Action.authorize)
+    async def on_authorize(self, id_tag: str, **kwargs):
+        return handle_authorize(id_tag=id_tag, **kwargs)
+
+    # ── StartTransaction ─────────────────────────────────────────────
+    @on(Action.start_transaction)
+    async def on_start_transaction(
+        self,
+        connector_id: int,
+        id_tag: str,
+        meter_start: int,
+        timestamp: str,
+        **kwargs,
+    ):
+        return handle_start_transaction(
+            connector_id=connector_id,
+            id_tag=id_tag,
+            meter_start=meter_start,
+            timestamp=timestamp,
+            **kwargs,
+        )
+
+    # ── StopTransaction ──────────────────────────────────────────────
+    @on(Action.stop_transaction)
+    async def on_stop_transaction(
+        self, meter_stop: int, timestamp: str, transaction_id: int, **kwargs
+    ):
+        return handle_stop_transaction(
+            meter_stop=meter_stop,
+            timestamp=timestamp,
+            transaction_id=transaction_id,
+            **kwargs,
+        )
+
+    # ── MeterValues ──────────────────────────────────────────────────
+    @on(Action.meter_values)
+    async def on_meter_values(self, connector_id: int, meter_value: list, **kwargs):
+        return handle_meter_values(
+            connector_id=connector_id,
+            meter_value=meter_value,
+            **kwargs,
+        )
