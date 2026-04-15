@@ -1,9 +1,4 @@
-"""
-core.V20.notify_event — NotifyEvent handler (OCPP 2.0.1).
-
-New in 2.0.1 — chargers report hardware / software events
-(component faults, firmware updates, etc.).
-"""
+"""core.V20.notify_event — NotifyEvent handler (OCPP 2.0.1)."""
 
 from __future__ import annotations
 
@@ -15,14 +10,19 @@ logger = logging.getLogger(__name__)
 
 
 def handle_notify_event(
-    generated_at: str,
-    seq_no: int,
-    event_data: list,
+    charge_point_id: str = "",
+    generated_at: str = "",
+    seq_no: int = 0,
+    event_data: list = None,
     **kwargs,
 ) -> call_result.NotifyEvent:
     """Log the event and acknowledge."""
+    if event_data is None:
+        event_data = []
+
     logger.info(
-        "NotifyEvent  generated_at=%s  seq=%d  events=%d  extras=%s",
+        "NotifyEvent  id=%s  generated_at=%s  seq=%d  events=%d  extras=%s",
+        charge_point_id,
         generated_at,
         seq_no,
         len(event_data),

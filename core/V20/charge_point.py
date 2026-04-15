@@ -1,9 +1,4 @@
-"""
-core.V20.charge_point — OCPP 2.0.1 ChargePoint (server-side).
-
-Same pattern as V16 — subclass the ``ocpp`` library's ChargePoint and
-delegate every @on handler to a pure function.
-"""
+"""core.V20.charge_point — OCPP 2.0.1 ChargePoint (server-side)."""
 
 from __future__ import annotations
 
@@ -24,27 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 class V201ChargePoint(_OcppV201CP):
-    """
-    Server-side representation of an OCPP 2.0.1 charging station.
-    """
+    """Server-side representation of an OCPP 2.0.1 charging station."""
 
-    # ── BootNotification ─────────────────────────────────────────────
     @on(Action.boot_notification)
     async def on_boot_notification(
         self, charging_station: dict, reason: str, **kwargs
     ):
         return handle_boot_notification(
+            charge_point_id=self.id,
             charging_station=charging_station,
             reason=reason,
             **kwargs,
         )
 
-    # ── Heartbeat ────────────────────────────────────────────────────
     @on(Action.heartbeat)
     async def on_heartbeat(self, **kwargs):
-        return handle_heartbeat(**kwargs)
+        return handle_heartbeat(charge_point_id=self.id, **kwargs)
 
-    # ── StatusNotification ───────────────────────────────────────────
     @on(Action.status_notification)
     async def on_status_notification(
         self,
@@ -55,6 +46,7 @@ class V201ChargePoint(_OcppV201CP):
         **kwargs,
     ):
         return handle_status_notification(
+            charge_point_id=self.id,
             timestamp=timestamp,
             connector_status=connector_status,
             evse_id=evse_id,
@@ -62,7 +54,6 @@ class V201ChargePoint(_OcppV201CP):
             **kwargs,
         )
 
-    # ── TransactionEvent ─────────────────────────────────────────────
     @on(Action.transaction_event)
     async def on_transaction_event(
         self,
@@ -74,6 +65,7 @@ class V201ChargePoint(_OcppV201CP):
         **kwargs,
     ):
         return handle_transaction_event(
+            charge_point_id=self.id,
             event_type=event_type,
             timestamp=timestamp,
             trigger_reason=trigger_reason,
@@ -82,21 +74,21 @@ class V201ChargePoint(_OcppV201CP):
             **kwargs,
         )
 
-    # ── MeterValues ──────────────────────────────────────────────────
     @on(Action.meter_values)
     async def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
         return handle_meter_values(
+            charge_point_id=self.id,
             evse_id=evse_id,
             meter_value=meter_value,
             **kwargs,
         )
 
-    # ── NotifyEvent ──────────────────────────────────────────────────
     @on(Action.notify_event)
     async def on_notify_event(
         self, generated_at: str, seq_no: int, event_data: list, **kwargs
     ):
         return handle_notify_event(
+            charge_point_id=self.id,
             generated_at=generated_at,
             seq_no=seq_no,
             event_data=event_data,

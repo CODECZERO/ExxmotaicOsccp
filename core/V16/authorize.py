@@ -1,9 +1,4 @@
-"""
-core.V16.authorize — Authorize handler (OCPP 1.6J).
-
-Called when a charger needs to validate an RFID tag / id_tag before
-starting a session.  Echo server accepts everything.
-"""
+"""core.V16.authorize — Authorize handler (OCPP 1.6J)."""
 
 from __future__ import annotations
 

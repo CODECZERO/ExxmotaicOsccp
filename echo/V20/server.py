@@ -1,18 +1,4 @@
-"""
-echo.V20.server — OCPP 2.0.1 echo server factory.
-
-Provides ``create_v201_echo_server`` which spins up a WebSocket server
-that delegates every message to ``core.V20.V201ChargePoint``.
-Zero handler code lives here — it's all in ``core/V20/``.
-
-Usage (standalone):
-    python echo/main.py          # default runs V16
-    # To run V201 from echo, see echo-n/main.py
-
-Usage (programmatic / tests):
-    server = await create_v201_echo_server("127.0.0.1", 0)
-    port   = server.sockets[0].getsockname()[1]
-"""
+"""echo.V20.server — OCPP 2.0.1 echo server factory."""
 
 from __future__ import annotations
 
@@ -21,6 +7,7 @@ import logging
 import websockets
 
 from core.V20 import V201ChargePoint
+from shared.constants import OCPP_V201_SUBPROTOCOL
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +35,12 @@ async def create_v201_echo_server(
     host: str = "0.0.0.0",
     port: int = 8001,
 ) -> websockets.WebSocketServer:
-    """
-    Create and return an OCPP 2.0.1 echo WebSocket server.
-
-    The server is already listening when this coroutine returns.
-    Call ``server.close()`` + ``await server.wait_closed()`` to tear down.
-    """
+    """Create and return an OCPP 2.0.1 echo WebSocket server."""
     server = await websockets.serve(
         _on_connect,
         host,
         port,
-        subprotocols=["ocpp2.0.1"],
+        subprotocols=[OCPP_V201_SUBPROTOCOL],
     )
     logger.info("Echo V201 server listening on %s:%d", host, port)
     return server

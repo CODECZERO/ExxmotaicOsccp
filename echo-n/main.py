@@ -1,45 +1,70 @@
-"""
-echo-n — OCPP 2.0.1 debug echo server (:5001).
-
-Zero business logic of its own — purely delegates to ``core.V20``
-via the server factory.  Identical pattern to ``echo/`` but speaks
-OCPP 2.0.1.
-
-Usage:
-    python echo-n/main.py
-
-Then connect with:
-    wscat -c ws://localhost:5001/ocpp/2.0.1/TEST001 --subprotocol ocpp2.0.1
-"""
+"""echo-n — Dual-version OCPP debug echo server (alternate port)."""
 
 from __future__ import annotations
 
 import asyncio
-import importlib
 import logging
 import os
 import sys
 
+import websockets
+
 # Ensure the project root is importable when running as a script.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# "echo-n" is not a valid Python identifier, so we use importlib to
-# load the V20.server module from the echo-n directory.
-_echo_n_v20_server = importlib.import_module("echo-n.V20.server")
-create_v201_echo_server = _echo_n_v20_server.create_v201_echo_server
+from shared.env import load_env  # noqa: E402
+
+load_env()
+
+from shared.constants import (  # noqa: E402
+    ECHO_N_PORT,
+    BIND_HOST,
+    LOG_LEVEL,
+    OCPP_V16_SUBPROTOCOL,
+    OCPP_V201_SUBPROTOCOL,
+)
+from core.router import detect_version, create_charge_point  # noqa: E402
 
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=LOG_LEVEL,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
 )
 logger = logging.getLogger("echo-n")
 
-ECHO_N_PORT = int(os.getenv("ECHO_N_PORT", "5001"))
+
+async def _on_connect(connection):
+    """Accept any OCPP charger, detect version, delegate to core."""
+    path = connection.request.path
+    charge_point_id = path.strip("/").split("/")[-1]
+    version = detect_version(path)
+
+    logger.info(
+        "Echo-N — charger connected  id=%s  version=%s  path=%s",
+        charge_point_id,
+        version,
+        path,
+    )
+
+    cp = create_charge_point(charge_point_id, connection, version)
+
+    try:
+        await cp.start()
+    except websockets.exceptions.ConnectionClosed:
+        logger.info("Echo-N — charger disconnected  id=%s", charge_point_id)
 
 
 async def main():
-    server = await create_v201_echo_server("0.0.0.0", ECHO_N_PORT)
-    logger.info("Echo-N V201 server ready on :%d", ECHO_N_PORT)
+    server = await websockets.serve(
+        _on_connect,
+        BIND_HOST,
+        ECHO_N_PORT,
+        subprotocols=[OCPP_V16_SUBPROTOCOL, OCPP_V201_SUBPROTOCOL],
+    )
+    logger.info(
+        "Echo-N server ready on %s:%d  (V16 + V201 dual-version)",
+        BIND_HOST,
+        ECHO_N_PORT,
+    )
     await server.wait_closed()
 
 

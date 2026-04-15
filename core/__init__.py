@@ -1,9 +1,4 @@
-"""
-core — OCPP WebSocket handler library.
-
-Exports version-specific ChargePoint classes and the router utilities
-that echo / echo-n / the production server all share.
-"""
+"""core — OCPP WebSocket handler library."""
 
 from core.V16 import V16ChargePoint          # noqa: F401
 from core.V20 import V201ChargePoint         # noqa: F401

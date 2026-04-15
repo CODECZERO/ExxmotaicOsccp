@@ -1,14 +1,4 @@
-"""
-tests.test_boot_notification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Integration test:  spins up the V16 echo server on a free port,
-connects a client-side ChargePoint, sends a BootNotification,
-and asserts the response is Accepted.
-
-Run:
-    pytest tests/test_boot_notification.py -v
-"""
+"""tests.test_boot_notification"""
 
 from __future__ import annotations
 
@@ -29,7 +19,6 @@ from ocpp.v16.enums import RegistrationStatus          # noqa: E402
 from core.V16 import V16ChargePoint                    # noqa: E402
 
 
-# ── helpers ──────────────────────────────────────────────────────────
 
 class _TestClient(ClientChargePoint):
     """Minimal client that can send a BootNotification."""
@@ -52,17 +41,10 @@ async def _echo_handler(connection):
         pass
 
 
-# ── test ─────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_v16_boot_notification_accepted():
-    """
-    Full round-trip: server ↔ client over a real WebSocket.
-
-    1. Start the echo server on port 0 (OS picks a free port).
-    2. Connect a client and send BootNotification.
-    3. Assert the server replies with status=Accepted.
-    """
+    """Full round-trip: server ↔ client over a real WebSocket."""
     # 1. start server
     server = await websockets.serve(
         _echo_handler,

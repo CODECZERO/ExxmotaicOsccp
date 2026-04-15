@@ -1,17 +1,4 @@
-"""
-echo — OCPP 1.6J debug echo server (:8000).
-
-Zero business logic of its own — purely delegates to ``core.V16``
-via the server factory in ``echo.V16.server``.
-Use this to smoke-test physical hardware before wiring up
-the production core server and database.
-
-Usage:
-    python echo/main.py
-
-Then connect with:
-    wscat -c ws://localhost:8000/ocpp/1.6/TEST001 --subprotocol ocpp1.6
-"""
+"""echo — Dual-version OCPP debug echo server."""
 
 from __future__ import annotations
 
@@ -20,23 +7,64 @@ import logging
 import os
 import sys
 
+import websockets
+
 # Ensure the project root is importable when running as a script.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from echo.V16.server import create_v16_echo_server  # noqa: E402
+from shared.env import load_env  # noqa: E402
+
+load_env()
+
+from shared.constants import (  # noqa: E402
+    ECHO_PORT,
+    BIND_HOST,
+    LOG_LEVEL,
+    OCPP_V16_SUBPROTOCOL,
+    OCPP_V201_SUBPROTOCOL,
+)
+from core.router import detect_version, create_charge_point  # noqa: E402
 
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=LOG_LEVEL,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
 )
 logger = logging.getLogger("echo")
 
-ECHO_PORT = int(os.getenv("ECHO_PORT", "8000"))
+
+async def _on_connect(connection):
+    """Accept any OCPP charger, detect version, delegate to core."""
+    path = connection.request.path
+    charge_point_id = path.strip("/").split("/")[-1]
+    version = detect_version(path)
+
+    logger.info(
+        "Echo — charger connected  id=%s  version=%s  path=%s",
+        charge_point_id,
+        version,
+        path,
+    )
+
+    cp = create_charge_point(charge_point_id, connection, version)
+
+    try:
+        await cp.start()
+    except websockets.exceptions.ConnectionClosed:
+        logger.info("Echo — charger disconnected  id=%s", charge_point_id)
 
 
 async def main():
-    server = await create_v16_echo_server("0.0.0.0", ECHO_PORT)
-    logger.info("Echo V16 server ready on :%d", ECHO_PORT)
+    server = await websockets.serve(
+        _on_connect,
+        BIND_HOST,
+        ECHO_PORT,
+        subprotocols=[OCPP_V16_SUBPROTOCOL, OCPP_V201_SUBPROTOCOL],
+    )
+    logger.info(
+        "Echo server ready on %s:%d  (V16 + V201 dual-version)",
+        BIND_HOST,
+        ECHO_PORT,
+    )
     await server.wait_closed()
 
 

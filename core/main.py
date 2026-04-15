@@ -1,15 +1,4 @@
-"""
-core.main — Dual-version OCPP WebSocket server (:5000).
-
-Accepts both 1.6J and 2.0.1 chargers on a single port.
-The version is detected from the WebSocket request path and the
-appropriate ChargePoint class is instantiated via ``router``.
-
-Usage:
-    python -m core.main
-    # or
-    python core/main.py
-"""
+"""core.main — Dual-version OCPP WebSocket server."""
 
 from __future__ import annotations
 
@@ -23,26 +12,26 @@ import websockets
 # Ensure the project root is importable when running as a script.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.router import detect_version, get_subprotocols, create_charge_point  # noqa: E402
+from shared.env import load_env  # noqa: E402
+
+load_env()
+
+from shared.constants import CORE_PORT, BIND_HOST, LOG_LEVEL   # noqa: E402
+from core.router import (                                       # noqa: E402
+    detect_version,
+    get_subprotocols,
+    create_charge_point,
+)
 
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=LOG_LEVEL,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
 )
 logger = logging.getLogger("core.main")
 
-CORE_PORT = int(os.getenv("CORE_PORT", "5000"))
-
 
 async def on_connect(connection):
-    """
-    Handle every new WebSocket connection.
-
-    1. Extract the charge-point id from the path.
-    2. Detect the OCPP version from the path.
-    3. Instantiate the matching ChargePoint subclass.
-    4. Listen for messages until the charger disconnects.
-    """
+    """Handle every new WebSocket connection."""
     path = connection.request.path
     charge_point_id = path.strip("/").split("/")[-1]
     version = detect_version(path)
@@ -65,11 +54,15 @@ async def on_connect(connection):
 async def main():
     server = await websockets.serve(
         on_connect,
-        "0.0.0.0",
+        BIND_HOST,
         CORE_PORT,
         subprotocols=get_subprotocols(),
     )
-    logger.info("OCPP Core server listening on :%d  (1.6 + 2.0.1)", CORE_PORT)
+    logger.info(
+        "OCPP Core server listening on %s:%d  (1.6 + 2.0.1)",
+        BIND_HOST,
+        CORE_PORT,
+    )
     await server.wait_closed()
 
 
