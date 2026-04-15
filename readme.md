@@ -1,260 +1,143 @@
 # Exxomatic OCPP — EV Charger Management System
 
-A production-grade EV charger backend built on the OCPP protocol. Physical chargers connect via WebSocket, a Flask REST API serves dashboards and mobile apps, and PostgreSQL stores all state.
+A production-grade EV charger backend built natively on the OCPP protocol. Physical chargers connect via WebSocket, a Flask REST API serves dashboards and mobile apps, and PostgreSQL stores all state. This architecture natively unifies OCPP 1.6J and OCPP 2.0.1 directly interacting with the identical database structure.
 
 ---
 
 ## Architecture
 
-```
+```text
 Internet → Cloudflare → HAProxy :80 → Flask API  :5050
 Charger  → Cloudflare → HAProxy :80 → OCPP Core  :5000
 ```
 
 | Service | Port | Purpose |
 |---|---|---|
-| core | 5000 | OCPP WebSocket server — chargers connect here |
-| api | 5050 | Flask REST API — dashboards and apps connect here |
-| echo | 8000 | Debug echo server for hardware testing (v1.6J) |
-| echo_n | 5001 | Debug echo server for hardware testing (v2.0.1) |
+| core | 5000 | Production OCPP WebSocket server — actual EV hardware endpoints |
+| api | 5050 | Flask REST API — HTTP endpoints for dashboards and mobile apps |
+| echo | 8000 | Debug echo WebSocket server (Dual Protocol 1.6 / 2.0.1) |
+| echo-n | 5001 | Alternate debug echo WebSocket server (Dual Protocol 1.6 / 2.0.1) |
 
 ---
 
-## Folder Structure
+## HTTP REST API Endpoints
 
-```
-exxomatic-ocpp/
-│
-├── core/                        ← OCPP WebSocket server :5000
-│   ├── main.py                  ← entry point
-│   ├── router.py                ← detects version, routes to handler
-│   └── handlers/
-│       ├── v16/
-│       │   ├── __init__.py
-│       │   ├── boot_notification.py
-│       │   ├── heartbeat.py
-│       │   ├── start_transaction.py
-│       │   ├── stop_transaction.py
-│       │   ├── status_notification.py
-│       │   ├── meter_values.py
-│       │   └── authorize.py
-│       └── v201/
-│           ├── __init__.py
-│           ├── boot_notification.py
-│           ├── heartbeat.py
-│           ├── transaction_event.py
-│           ├── status_notification.py
-│           ├── meter_values.py
-│           └── notify_event.py
-│
-├── api/                         ← Flask REST API :5050
-│   ├── main.py                  ← entry point, Flask app factory
-│   ├── decorators.py            ← error_handler decorator
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   ├── chargers.py
-│   │   ├── sessions.py
-│   │   ├── commands.py
-│   │   └── health.py
-│   ├── controllers/
-│   │   ├── charger_controller.py
-│   │   ├── session_controller.py
-│   │   └── command_controller.py
-│   └── templates/
-│       └── error.html
-│
-├── echo/                        ← debug echo server :8000
-│   └── main.py
-│
-├── echo_n/                      ← debug echo v2.0.1 :5001
-│   └── main.py
-│
-├── shared/                      ← imported by all services
-│   ├── __init__.py
-│   ├── logger.py                ← RotatingFileHandler setup
-│   ├── db/
-│   │   ├── __init__.py
-│   │   ├── client.py            ← SQLAlchemy session
-│   │   └── models.py            ← chargers, sessions, meter_values
-│   ├── types/
-│   │   ├── __init__.py
-│   │   ├── ocpp16_types.py      ← dataclasses for 1.6J payloads
-│   │   └── ocpp201_types.py     ← dataclasses for 2.0.1 payloads
-│   └── constants.py
-│
-├── logs/                        ← auto-created at runtime, never commit
-├── tests/
-├── docker-compose.yml
-├── requirements.txt
-├── config.py
-├── .env                         ← never commit
-├── .env.example                 ← commit this
-└── .gitignore
+The API is fully stateless, speaking directly to PostgreSQL. Start the API using `python api/main.py`. Base URL is `http://localhost:5050/api`.
+
+### Platform Stats (Dashboards)
+```text
+GET    /stats                     platform-wide aggregation dashboard
+GET    /chargers/<id>/stats       statistics for a specific charger
 ```
 
----
-
-## OCPP Version Support
-
-| Version | Status | Notes |
-|---|---|---|
-| OCPP 1.6J | Primary | 90% of Indian chargers, build this first |
-| OCPP 2.0.1 | Secondary | Add when a 2.0.1 charger is available for testing |
-
-Chargers announce their version in the WebSocket URL:
-
-```
-ws://host/ocpp/1.6/CHARGER_ID     → routes to handlers/v16/
-ws://host/ocpp/2.0.1/CHARGER_ID   → routes to handlers/v201/
+### Chargers (Management)
+```text
+GET    /chargers                  list all registered external chargers
+GET    /chargers/<id>             get single charger hardware + connection status
+POST   /chargers                  register a new physical charger
+PUT    /chargers/<id>             update existing charger attributes
+DELETE /chargers/<id>             remove charger permanently
+GET    /chargers/<id>/sessions    retrieve all sessions executed by this charger
 ```
 
----
-
-## REST API Endpoints
-
-### Chargers
-```
-GET    /api/chargers              list all chargers
-GET    /api/chargers/<id>         get single charger + status
-POST   /api/chargers              register new charger
-PUT    /api/chargers/<id>         update charger
-DELETE /api/chargers/<id>         remove charger
+### Charging Sessions (Transactions)
+```text
+GET    /sessions                  list all unified charging sessions
+GET    /sessions/<id>             session detail + total energy consumed constraints
+GET    /sessions/active           all active sessions currently drawing load
+POST   /sessions/<id>/stop        remotely stop an active session
 ```
 
-### Sessions
-```
-GET    /api/sessions              list all sessions
-GET    /api/sessions/<id>         session detail + energy consumed
-GET    /api/sessions/active       all active sessions
-POST   /api/sessions/<id>/stop    stop a session
+### Remote Commands (Hardware Triggers)
+Tracks all commands inside the `command_logs` DB table.
+```text
+POST   /chargers/<id>/start       send a RemoteStartTransaction to charger
+POST   /chargers/<id>/stop        send a RemoteStopTransaction to charger
+POST   /chargers/<id>/reset       send a Soft/Hard Reset to reboot charger
+POST   /chargers/<id>/unlock      send UnlockConnector command
+GET    /chargers/<id>/commands    view the complete command execution history footprint
 ```
 
-### Commands
-```
-POST   /api/chargers/<id>/start   remote start session
-POST   /api/chargers/<id>/stop    remote stop session
-POST   /api/chargers/<id>/reset   reset charger
-POST   /api/chargers/<id>/unlock  unlock connector
+### Meter Values (Live Load)
+```text
+GET    /chargers/<id>/meter-values/latest  view the exact last live reading
+GET    /chargers/<id>/meter-values         view all historical meter readings for a specific charger
+GET    /sessions/<id>/meter-values         view all reading footprints traced to a specific session
 ```
 
 ### Health
-```
-GET    /health                    HAProxy health check
+```text
+GET    /health                    HAProxy health check verification
 ```
 
 ---
 
-## Database Schema
+## WebSocket Interfaces (OCPP Sockets)
 
-Three tables — `chargers`, `sessions`, `meter_values`.
+Both the `core` production server and `echo` testing servers dynamically identify versions based on the URL sequence.
+They automatically support **OCPP 1.6J** and **OCPP 2.0.1** on the exact same port.
 
-| Table | Key columns |
-|---|---|
-| chargers | id, charger_id, vendor, model, status, last_heartbeat |
-| sessions | id, charger_id, transaction_id, id_tag, start_time, stop_time, energy_kwh |
-| meter_values | id, session_id, timestamp, energy_wh, power_w, voltage, current |
+**Starting the Socket servers:**
+```bash
+python core/main.py   # Production
+python echo/main.py   # Dry-Run Tester
+```
 
-Managed via SQLAlchemy. Models defined in `shared/db/models.py`.
+**Hardware Connect URLs:**
+```text
+ws://localhost:5000/ocpp/1.6/YOUR_CHARGER_ID
+ws://localhost:5000/ocpp/2.0.1/YOUR_CHARGER_ID
+```
+
+**Testing via Console Websocket Client (`wscat`):**
+To simulate an OCPP 1.6 charger connecting to your Echo testing node:
+```bash
+wscat -c ws://localhost:8000/ocpp/1.6/TEST001 --subprotocol ocpp1.6
+```
+To simulate an OCPP 2.0.1 charger:
+```bash
+wscat -c ws://localhost:8000/ocpp/2.0.1/TEST002 --subprotocol ocpp2.0.1
+```
 
 ---
 
-## Local Setup
+## Database Schema Model (PostgreSQL)
+
+4 foundational tables managed via pure SQLAlchemy ORM mappings natively:
+
+| Table | Function | Important Columns |
+|---|---|---|
+| `chargers` | Enrolled Hardware | `charger_id`, `vendor`, `model`, `status`, `last_heartbeat` |
+| `sessions` | Active/Historical loads | `transaction_id`, `start_time`, `stop_time`, `energy_kwh` |
+| `meter_values` | Periodical HW limits | `session_id`, `power_w`, `voltage`, `current_a`, `soc` |
+| `command_logs` | Remote execution trace | `command`, `status`, `payload` |
+
+(All internal keys utilize implicit SQLAlchemy `ForeignKey()` arrays avoiding mapping issues).
+
+---
+
+## Local Development & Setup
 
 ```bash
-# 1. clone
+# 1. Clone
 git clone https://github.com/CODECZERO/ExxmotaicOsccp.git
 cd ExxmotaicOsccp
 
-# 2. create virtual env
-python -m venv venv
-source venv/bin/activate        # windows: venv\Scripts\activate
+# 2. Virtual Env
+python -m venv .venv
+source .venv/bin/activate
 
-# 3. install dependencies
+# 3. Dependencies
 pip install -r requirements.txt
 
-# 4. setup env
+# 4. Generate Env File
 cp .env.example .env
-# fill in DATABASE_URL, SECRET_KEY etc
+# Important: Update DATABASE_URL with a local PostgreSQL server
 
-# 5. run all services
-docker-compose up
+# 5. Run full test suite to guarantee functionality
+pytest tests/ -v
 
-# 6. test echo server (no charger needed)
-wscat -c ws://localhost:8000/ocpp/1.6/TEST001
+# 6. Execute desired environments
+python api/main.py       # REST
+python core/main.py      # Core WebSockets
 ```
-
----
-
-## Running Individual Services
-
-```bash
-python core/main.py       # OCPP core :5000
-python api/main.py        # Flask API :5050
-python echo/main.py       # echo :8000
-python echo_n/main.py     # echo-n :5001
-```
-
----
-
-## Git Branch Convention
-
-```
-main                          ← production, always stable
-dev                           ← active development
-
-feature/ocpp-core-router      ← new features
-feature/v16-handlers
-feature/flask-api-routes
-
-fix/heartbeat-handler         ← bug fixes
-chore/folder-structure        ← housekeeping
-```
-
-Always branch off `dev`. Never commit directly to `main`.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| WebSocket server | Python `websockets` library |
-| REST API | Flask |
-| Database ORM | SQLAlchemy |
-| Database | PostgreSQL |
-| Reverse proxy | HAProxy |
-| DNS + security | Cloudflare |
-| Deployment | Docker + AWS EC2 |
-| Logging | Python `logging` with `RotatingFileHandler` |
-
----
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and fill in:
-
-```
-DATABASE_URL=postgresql://user:pass@localhost:5432/exxomatic
-SECRET_KEY=your-secret-key
-API_KEY=your-api-key
-LOG_LEVEL=INFO
-LOG_FILE=logs/app.log
-CORE_PORT=5000
-API_PORT=5050
-ECHO_PORT=8000
-ECHO_N_PORT=5001
-```
-
----
-
-## Build Priority
-
-1. `shared/db/models.py` — define tables first
-2. `core/handlers/v16/` — handle real charger messages
-3. `api/routes/` — REST layer
-4. `echo/main.py` — for hardware testing
-5. `core/handlers/v201/` — only when a 2.0.1 charger is available
-
----
-
-*Built by CODECZERO*
