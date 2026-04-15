@@ -1,0 +1,50 @@
+import type { Metadata } from "next";
+import { Inter, Manrope } from 'next/font/google';
+
+import "./globals.css";
+import Sidebar from "@/components/Sidebar";
+import TopNav from "@/components/TopNav";
+import ErrorSuppressor from "@/components/ErrorSuppressor";
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+});
+
+export const metadata: Metadata = {
+  title: "VoltMetric Pro | Dashboard",
+  description: "EV Infrastructure Management",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${inter.variable} ${manrope.variable} antialiased light`}
+      suppressHydrationWarning
+    >
+      <head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </head>
+      <body className="flex min-h-screen bg-background text-on-surface" suppressHydrationWarning>
+        <ErrorSuppressor />
+        <Sidebar />
+        <div className="flex-1 flex flex-col ml-64 min-h-screen">
+          <TopNav />
+          <main className="flex-1 bg-background font-headline">
+            {children}
+          </main>
+        </div>
+      </body>
+    </html>
+  );
+}
