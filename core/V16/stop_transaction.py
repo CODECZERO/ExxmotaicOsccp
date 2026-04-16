@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 from ocpp.v16 import call_result
 
 from shared.normalizer import normalize_stop_tx_v16
 from shared.db.client import get_db, db_available
 from shared.db.models import ChargingSession
+from shared.live_state import parse_ocpp_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -51,23 +51,21 @@ def handle_stop_transaction(
                         .first()
                     )
                     if session:
-                        parse_ts = None
-                        if timestamp:
-                            try:
-                                parse_ts = datetime.fromisoformat(timestamp)
-                            except ValueError:
-                                parse_ts = datetime.now(tz=timezone.utc)
-
                         session.meter_stop = normalized["meter_stop"]
-                        session.stop_time = parse_ts
+                        session.stop_time = parse_ocpp_timestamp(timestamp)
                         session.stop_reason = normalized.get("stop_reason")
 
                         # Compute energy consumed
-                        if session.meter_start is not None and session.meter_stop is not None:
+                        if (
+                            session.meter_start is not None
+                            and session.meter_stop is not None
+                        ):
                             session.energy_kwh = round(
                                 (session.meter_stop - session.meter_start) / 1000.0, 3
                             )
         except Exception:
-            logger.exception("Failed to persist StopTransaction for %s", charge_point_id)
+            logger.exception(
+                "Failed to persist StopTransaction for %s", charge_point_id
+            )
 
     return call_result.StopTransaction()

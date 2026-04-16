@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 from typing import List, Dict, Any
 
 from ocpp.v201 import call_result
 
-from shared.normalizer import normalize_meter_v201
 from shared.db.client import get_db, db_available
 from shared.db.models import MeterValue
+from shared.live_state import (
+    apply_energy_to_session,
+    parse_ocpp_timestamp,
+    resolve_session_for_meter,
+)
+from shared.normalizer import normalize_meter_v201
 
 logger = logging.getLogger(__name__)
 
@@ -44,24 +48,26 @@ def handle_meter_values(
             with get_db() as db:
                 if db is not None:
                     for reading in readings:
-                        ts = reading.get("timestamp")
-                        if isinstance(ts, str):
-                            try:
-                                ts = datetime.fromisoformat(ts)
-                            except ValueError:
-                                ts = datetime.now(tz=timezone.utc)
+                        session = resolve_session_for_meter(
+                            db,
+                            charge_point_id,
+                            connector_id=reading["connector_id"],
+                            evse_id=reading["evse_id"],
+                        )
+                        apply_energy_to_session(session, reading.get("energy_wh"))
 
                         mv = MeterValue(
                             charger_id=charge_point_id,
                             connector_id=reading["connector_id"],
                             evse_id=reading["evse_id"],
-                            timestamp=ts,
+                            timestamp=parse_ocpp_timestamp(reading.get("timestamp")),
                             energy_wh=reading.get("energy_wh"),
                             power_w=reading.get("power_w"),
                             voltage=reading.get("voltage"),
                             current_a=reading.get("current_a"),
                             soc=reading.get("soc"),
                             raw_json=reading.get("raw_json"),
+                            session_id=session.id if session else None,
                         )
                         db.add(mv)
         except Exception:

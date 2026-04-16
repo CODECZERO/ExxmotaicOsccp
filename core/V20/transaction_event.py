@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 from ocpp.v201 import call_result
 
-from shared.normalizer import normalize_tx_event_v201
 from shared.db.client import get_db, db_available
 from shared.db.models import ChargingSession
+from shared.live_state import (
+    apply_energy_to_session,
+    extract_energy_wh,
+    parse_ocpp_timestamp,
+)
+from shared.normalizer import normalize_tx_event_v201
 
 logger = logging.getLogger(__name__)
 
@@ -70,18 +74,26 @@ def handle_transaction_event(
 
 def _handle_started(db, charge_point_id: str, normalized: dict, timestamp: str):
     """Create a new ChargingSession for a Started event."""
-    parse_ts = _parse_timestamp(timestamp)
-
-    session = ChargingSession(
-        charger_id=charge_point_id,
-        transaction_id=normalized["transaction_id"],
-        id_tag=normalized.get("id_tag", ""),
-        connector_id=normalized.get("connector_id", 1),
-        evse_id=normalized.get("evse_id", 1),
-        meter_start=0,
-        start_time=parse_ts,
+    session = (
+        db.query(ChargingSession)
+        .filter_by(
+            charger_id=charge_point_id,
+            transaction_id=normalized["transaction_id"],
+        )
+        .first()
     )
-    db.add(session)
+    if session is None:
+        session = ChargingSession(
+            charger_id=charge_point_id,
+            transaction_id=normalized["transaction_id"],
+        )
+        db.add(session)
+
+    session.id_tag = normalized.get("id_tag") or session.id_tag
+    session.connector_id = normalized.get("connector_id", session.connector_id or 1)
+    session.evse_id = normalized.get("evse_id", session.evse_id or 1)
+    session.start_time = parse_ocpp_timestamp(timestamp)
+    apply_energy_to_session(session, extract_energy_wh(normalized.get("meter_value")))
 
 
 def _handle_updated(db, charge_point_id: str, normalized: dict):
@@ -101,20 +113,7 @@ def _handle_updated(db, charge_point_id: str, normalized: dict):
         )
         return
 
-    # Extract latest energy from meter_value if present
-    meter_value = normalized.get("meter_value")
-    if meter_value and isinstance(meter_value, list):
-        for mv in meter_value:
-            sampled = mv.get("sampled_value", [])
-            for sample in sampled:
-                value_str = str(sample.get("value", ""))
-                try:
-                    value = float(value_str)
-                except (ValueError, TypeError):
-                    continue
-                measurand = sample.get("measurand", "")
-                if not measurand or "energy" in measurand.lower():
-                    session.meter_stop = int(value)
+    apply_energy_to_session(session, extract_energy_wh(normalized.get("meter_value")))
 
 
 def _handle_ended(db, charge_point_id: str, normalized: dict, timestamp: str):
@@ -134,22 +133,6 @@ def _handle_ended(db, charge_point_id: str, normalized: dict, timestamp: str):
         )
         return
 
-    parse_ts = _parse_timestamp(timestamp)
-    session.stop_time = parse_ts
+    apply_energy_to_session(session, extract_energy_wh(normalized.get("meter_value")))
+    session.stop_time = parse_ocpp_timestamp(timestamp)
     session.stop_reason = normalized.get("stop_reason")
-
-    # Compute energy consumed
-    if session.meter_start is not None and session.meter_stop is not None:
-        session.energy_kwh = round(
-            (session.meter_stop - session.meter_start) / 1000.0, 3
-        )
-
-
-def _parse_timestamp(timestamp: str):
-    """Parse an ISO timestamp string, falling back to UTC now."""
-    if timestamp:
-        try:
-            return datetime.fromisoformat(timestamp)
-        except ValueError:
-            pass
-    return datetime.now(tz=timezone.utc)
