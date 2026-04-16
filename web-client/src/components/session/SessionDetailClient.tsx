@@ -7,6 +7,7 @@ import KeyValueGrid from '@/components/KeyValueGrid';
 import MetricCard from '@/components/MetricCard';
 import StatusBadge from '@/components/StatusBadge';
 import { useSession, useSessionMeterValues } from '@/hooks/useData';
+import { useLiveStream } from '@/hooks/useLiveStream';
 import { sessionApi } from '@/lib/api';
 import { formatDateTime, formatInteger, formatNumber, formatPercent } from '@/lib/format';
 
@@ -15,8 +16,17 @@ interface SessionDetailClientProps {
 }
 
 export default function SessionDetailClient({ sessionId }: SessionDetailClientProps) {
-  const { session, isLoading, isError, refresh } = useSession(sessionId);
-  const { meterValues, refresh: refreshMeterValues } = useSessionMeterValues(sessionId);
+  useLiveStream({
+    sessionId,
+    keys: [`/sessions/${sessionId}`, `/sessions/${sessionId}/meter-values`, '/sessions/active', '/stats'],
+  });
+
+  const { session, isLoading, isError, refresh } = useSession(sessionId, {
+    refreshInterval: (data) => data?.session.active ? 2500 : 15000,
+  });
+  const { meterValues, refresh: refreshMeterValues } = useSessionMeterValues(sessionId, {
+    refreshInterval: session?.active ? 2500 : 10000,
+  });
   const [isStopping, setIsStopping] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 

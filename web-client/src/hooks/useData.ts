@@ -1,6 +1,18 @@
 import useSWR from 'swr';
 
 import { commandApi, fetcher } from '@/lib/api';
+import {
+  activeSessionsRefreshInterval,
+  buildLiveConfig,
+  chargerRefreshInterval,
+  chargersRefreshInterval,
+  chargerStatsRefreshInterval,
+  dashboardRefreshInterval,
+  latestMeterRefreshInterval,
+  meterValuesRefreshInterval,
+  sessionRefreshInterval,
+  sessionsRefreshInterval,
+} from '@/lib/live';
 import type {
   Charger,
   ChargerResponse,
@@ -17,10 +29,16 @@ import type {
   SessionsResponse,
 } from '@/lib/types';
 
+interface LiveQueryOptions<T> {
+  refreshInterval?: number | ((data: T | undefined) => number);
+}
+
 export function useDashboardStats() {
-  const { data, error, isLoading, mutate } = useSWR<DashboardStatsResponse>('/stats', fetcher, {
-    refreshInterval: 5000,
-  });
+  const { data, error, isLoading, mutate } = useSWR<DashboardStatsResponse>(
+    '/stats',
+    fetcher,
+    buildLiveConfig(dashboardRefreshInterval),
+  );
 
   return {
     stats: data?.stats as DashboardStats | undefined,
@@ -31,9 +49,11 @@ export function useDashboardStats() {
 }
 
 export function useChargers() {
-  const { data, error, isLoading, mutate } = useSWR<ChargersResponse>('/chargers', fetcher, {
-    refreshInterval: 10000,
-  });
+  const { data, error, isLoading, mutate } = useSWR<ChargersResponse>(
+    '/chargers',
+    fetcher,
+    buildLiveConfig(chargersRefreshInterval),
+  );
 
   return {
     chargers: data?.chargers ?? [],
@@ -44,12 +64,12 @@ export function useChargers() {
   };
 }
 
-export function useCharger(chargerId?: string) {
+export function useCharger(chargerId?: string, options?: LiveQueryOptions<ChargerResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<ChargerResponse>(
     shouldFetch ? `/chargers/${chargerId}` : null,
     fetcher,
-    { refreshInterval: 10000 },
+    buildLiveConfig(options?.refreshInterval ?? chargerRefreshInterval),
   );
 
   return {
@@ -60,12 +80,12 @@ export function useCharger(chargerId?: string) {
   };
 }
 
-export function useChargerStats(chargerId?: string) {
+export function useChargerStats(chargerId?: string, options?: LiveQueryOptions<ChargerStatsResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<ChargerStatsResponse>(
     shouldFetch ? `/chargers/${chargerId}/stats` : null,
     fetcher,
-    { refreshInterval: 8000 },
+    buildLiveConfig(options?.refreshInterval ?? chargerStatsRefreshInterval),
   );
 
   return {
@@ -78,9 +98,11 @@ export function useChargerStats(chargerId?: string) {
 }
 
 export function useSessions() {
-  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>('/sessions', fetcher, {
-    refreshInterval: 5000,
-  });
+  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>(
+    '/sessions',
+    fetcher,
+    buildLiveConfig(sessionsRefreshInterval),
+  );
 
   return {
     sessions: data?.sessions ?? [],
@@ -92,9 +114,11 @@ export function useSessions() {
 }
 
 export function useActiveSessions() {
-  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>('/sessions/active', fetcher, {
-    refreshInterval: 5000,
-  });
+  const { data, error, isLoading, mutate } = useSWR<SessionsResponse>(
+    '/sessions/active',
+    fetcher,
+    buildLiveConfig(activeSessionsRefreshInterval),
+  );
 
   return {
     sessions: data?.sessions ?? [],
@@ -105,12 +129,12 @@ export function useActiveSessions() {
   };
 }
 
-export function useSession(sessionId?: string) {
+export function useSession(sessionId?: string, options?: LiveQueryOptions<SessionResponse>) {
   const shouldFetch = Boolean(sessionId);
   const { data, error, isLoading, mutate } = useSWR<SessionResponse>(
     shouldFetch ? `/sessions/${sessionId}` : null,
     fetcher,
-    { refreshInterval: 5000 },
+    buildLiveConfig(options?.refreshInterval ?? sessionRefreshInterval),
   );
 
   return {
@@ -121,12 +145,12 @@ export function useSession(sessionId?: string) {
   };
 }
 
-export function useChargerSessions(chargerId?: string) {
+export function useChargerSessions(chargerId?: string, options?: LiveQueryOptions<SessionsResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<SessionsResponse>(
     shouldFetch ? `/chargers/${chargerId}/sessions` : null,
     fetcher,
-    { refreshInterval: 8000 },
+    buildLiveConfig(options?.refreshInterval ?? sessionsRefreshInterval),
   );
 
   return {
@@ -138,12 +162,12 @@ export function useChargerSessions(chargerId?: string) {
   };
 }
 
-export function useCommandLogs(chargerId?: string) {
+export function useCommandLogs(chargerId?: string, options?: LiveQueryOptions<CommandLogsResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<CommandLogsResponse>(
     shouldFetch ? `/chargers/${chargerId}/commands` : null,
     fetcher,
-    { refreshInterval: 8000 },
+    buildLiveConfig(options?.refreshInterval ?? 7000),
   );
 
   return {
@@ -155,12 +179,12 @@ export function useCommandLogs(chargerId?: string) {
   };
 }
 
-export function useChargerMeterValues(chargerId?: string) {
+export function useChargerMeterValues(chargerId?: string, options?: LiveQueryOptions<MeterValuesResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<MeterValuesResponse>(
     shouldFetch ? `/chargers/${chargerId}/meter-values` : null,
     fetcher,
-    { refreshInterval: 8000 },
+    buildLiveConfig(options?.refreshInterval ?? meterValuesRefreshInterval),
   );
 
   return {
@@ -172,12 +196,12 @@ export function useChargerMeterValues(chargerId?: string) {
   };
 }
 
-export function useLatestMeterValue(chargerId?: string) {
+export function useLatestMeterValue(chargerId?: string, options?: LiveQueryOptions<LatestMeterValueResponse>) {
   const shouldFetch = Boolean(chargerId);
   const { data, error, isLoading, mutate } = useSWR<LatestMeterValueResponse>(
     shouldFetch ? `/chargers/${chargerId}/meter-values/latest` : null,
     fetcher,
-    { refreshInterval: 5000 },
+    buildLiveConfig(options?.refreshInterval ?? latestMeterRefreshInterval),
   );
 
   return {
@@ -188,12 +212,12 @@ export function useLatestMeterValue(chargerId?: string) {
   };
 }
 
-export function useSessionMeterValues(sessionId?: string) {
+export function useSessionMeterValues(sessionId?: string, options?: LiveQueryOptions<MeterValuesResponse>) {
   const shouldFetch = Boolean(sessionId);
   const { data, error, isLoading, mutate } = useSWR<MeterValuesResponse>(
     shouldFetch ? `/sessions/${sessionId}/meter-values` : null,
     fetcher,
-    { refreshInterval: 5000 },
+    buildLiveConfig(options?.refreshInterval ?? meterValuesRefreshInterval),
   );
 
   return {

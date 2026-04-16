@@ -15,6 +15,7 @@ import {
   useCommandLogs,
   useLatestMeterValue,
 } from '@/hooks/useData';
+import { useLiveStream } from '@/hooks/useLiveStream';
 import { chargerApi, commandApi } from '@/lib/api';
 import { formatDateTime, formatInteger, formatNumber, formatPercent } from '@/lib/format';
 import type { UpdateChargerPayload } from '@/lib/types';
@@ -24,12 +25,30 @@ interface ChargerDetailClientProps {
 }
 
 export default function ChargerDetailClient({ chargerId }: ChargerDetailClientProps) {
-  const { charger, isLoading: chargerLoading, isError: chargerError, refresh: refreshCharger } = useCharger(chargerId);
-  const { stats, refresh: refreshStats } = useChargerStats(chargerId);
-  const { sessions, refresh: refreshSessions } = useChargerSessions(chargerId);
-  const { commandLogs, refresh: refreshCommands } = useCommandLogs(chargerId);
-  const { meterValues, refresh: refreshMeterValues } = useChargerMeterValues(chargerId);
-  const { meterValue, refresh: refreshLatestMeterValue } = useLatestMeterValue(chargerId);
+  useLiveStream({
+    chargerId,
+    keys: [
+      `/chargers/${chargerId}`,
+      `/chargers/${chargerId}/stats`,
+      `/chargers/${chargerId}/sessions`,
+      `/chargers/${chargerId}/commands`,
+      `/chargers/${chargerId}/meter-values`,
+      `/chargers/${chargerId}/meter-values/latest`,
+    ],
+  });
+
+  const { charger, isLoading: chargerLoading, isError: chargerError, refresh: refreshCharger } = useCharger(chargerId, {
+    refreshInterval: (data) => ['Charging', 'Preparing', 'Finishing', 'Faulted'].includes(data?.charger.status ?? '') ? 2500 : 7000,
+  });
+  const { stats, refresh: refreshStats } = useChargerStats(chargerId, {
+    refreshInterval: (data) => (data?.stats.active_sessions ?? 0) > 0 ? 2500 : 7000,
+  });
+  const { sessions, refresh: refreshSessions } = useChargerSessions(chargerId, {
+    refreshInterval: (data) => (data?.sessions ?? []).some((session) => session.active) ? 3000 : 7000,
+  });
+  const { commandLogs, refresh: refreshCommands } = useCommandLogs(chargerId, { refreshInterval: 7000 });
+  const { meterValues, refresh: refreshMeterValues } = useChargerMeterValues(chargerId, { refreshInterval: 4000 });
+  const { meterValue, refresh: refreshLatestMeterValue } = useLatestMeterValue(chargerId, { refreshInterval: 2500 });
 
   const [updateForm, setUpdateForm] = useState<UpdateChargerPayload>({
     vendor: '',

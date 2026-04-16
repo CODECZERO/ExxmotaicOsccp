@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import MetricCard from '@/components/MetricCard';
 import StatusBadge from '@/components/StatusBadge';
 import { useChargers } from '@/hooks/useData';
+import { useLiveStream } from '@/hooks/useLiveStream';
 import { chargerApi } from '@/lib/api';
 import { formatDateTime, formatInteger } from '@/lib/format';
 import type { CreateChargerPayload } from '@/lib/types';
@@ -21,6 +22,10 @@ const initialForm: CreateChargerPayload = {
 };
 
 export default function SiteManagement() {
+  useLiveStream({
+    keys: ['/chargers'],
+  });
+
   const { chargers, count, isLoading, isError, refresh } = useChargers();
   const [query, setQuery] = useState('');
   const [form, setForm] = useState<CreateChargerPayload>(initialForm);

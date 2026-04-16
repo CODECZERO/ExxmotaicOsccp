@@ -6,9 +6,14 @@ import { useMemo, useState } from 'react';
 import MetricCard from '@/components/MetricCard';
 import StatusBadge from '@/components/StatusBadge';
 import { useActiveSessions, useDashboardStats, useSessions } from '@/hooks/useData';
+import { useLiveStream } from '@/hooks/useLiveStream';
 import { formatDateTime, formatInteger, formatNumber } from '@/lib/format';
 
 export default function ActiveSession() {
+  useLiveStream({
+    keys: ['/sessions', '/sessions/active', '/stats'],
+  });
+
   const { sessions, isLoading, isError } = useSessions();
   const { sessions: activeSessions } = useActiveSessions();
   const { stats } = useDashboardStats();

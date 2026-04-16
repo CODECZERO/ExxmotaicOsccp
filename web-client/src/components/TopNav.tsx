@@ -7,8 +7,8 @@ export default function TopNav() {
       </div>
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 text-secondary font-bold text-sm bg-secondary/10 px-3 py-1.5 rounded-full">
-          <span className="material-symbols-outlined text-lg">verified_user</span>
-          System Status
+          <span className="material-symbols-outlined text-lg">sync</span>
+          Live polling
         </div>
         <div className="flex items-center gap-3">
           <button className="hover:bg-slate-50 rounded-full p-2 text-on-surface-variant transition-all cursor-pointer">

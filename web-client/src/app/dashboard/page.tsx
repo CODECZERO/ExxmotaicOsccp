@@ -5,9 +5,14 @@ import Link from 'next/link';
 import MetricCard from '@/components/MetricCard';
 import StatusBadge from '@/components/StatusBadge';
 import { useActiveSessions, useChargers, useDashboardStats } from '@/hooks/useData';
+import { useLiveStream } from '@/hooks/useLiveStream';
 import { formatDateTime, formatInteger, formatNumber } from '@/lib/format';
 
 export default function NetworkSummary() {
+  useLiveStream({
+    keys: ['/stats', '/chargers', '/sessions/active'],
+  });
+
   const { stats, isLoading, isError } = useDashboardStats();
   const { chargers } = useChargers();
   const { sessions: activeSessions } = useActiveSessions();

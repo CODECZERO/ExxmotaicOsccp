@@ -10,6 +10,7 @@ from api.routes.sessions import sessions_bp
 from api.routes.commands import commands_bp
 from api.routes.meter_values import meter_values_bp
 from api.routes.stats import stats_bp
+from api.routes.live import live_bp
 
 
 def register_routes(app: Flask) -> None:
@@ -20,3 +21,4 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(commands_bp)
     app.register_blueprint(meter_values_bp)
     app.register_blueprint(stats_bp)
+    app.register_blueprint(live_bp)
