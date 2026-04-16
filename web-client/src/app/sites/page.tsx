@@ -98,15 +98,10 @@ export default function SiteManagement() {
       <section className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-secondary">Infrastructure Registry</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">Charger management and hardware inventory</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Frontend is now wired to charger CRUD, per-charger detail, sessions, command history, and meter data from the backend API.
             </p>
-          </div>
-          <div className="rounded-[2rem] border border-surface-container bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-outline">Backend Endpoint</p>
-            <p className="mt-2 text-sm font-semibold text-primary">`/api/chargers`, `/api/chargers/:id/*`</p>
           </div>
         </div>
 
@@ -131,7 +126,6 @@ export default function SiteManagement() {
                 <h2 className="text-2xl font-black tracking-tight text-primary">Register charger</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">Uses `POST /api/chargers` without backend changes.</p>
               </div>
-              <span className="rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Live API</span>
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

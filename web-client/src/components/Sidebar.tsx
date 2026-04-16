@@ -19,24 +19,13 @@ export default function Sidebar() {
         </Link>
         <Link className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white" href="/sites">
           <span className="material-symbols-outlined">location_on</span>
-          <span className="font-headline text-sm font-medium">Site Management</span>
-        </Link>
-        <Link className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white" href="/sites">
-          <span className="material-symbols-outlined">ev_charger</span>
-          <span className="font-headline text-sm font-medium">Charger Detail</span>
+          <span className="font-headline text-sm font-medium">Chargers</span>
         </Link>
         <Link className="flex items-center gap-3 rounded-lg px-4 py-3 text-emerald-400 transition-colors hover:bg-slate-800 hover:text-white" href="/sessions">
           <span className="material-symbols-outlined">receipt_long</span>
-          <span className="font-headline text-sm font-medium">OCPP Transactions</span>
+          <span className="font-headline text-sm font-medium">Sessions</span>
         </Link>
       </nav>
-      <div className="mt-auto space-y-1 pt-4">
-        <Link className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-secondary py-3 font-bold text-white transition-all active:scale-95" href="/sites">
-          <span className="material-symbols-outlined text-sm">bolt</span>
-          Command Center
-        </Link>
-        <div className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Backend Integrated Views</div>
-      </div>
     </aside>
   );
 }

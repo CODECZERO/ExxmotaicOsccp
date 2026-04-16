@@ -48,15 +48,10 @@ export default function ActiveSession() {
       <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
         <section className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-secondary">Transaction Stream</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">Charging session operations</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Integrated with full session listing, active session view, per-session detail, and remote stop support from the backend.
             </p>
-          </div>
-          <div className="rounded-[2rem] border border-surface-container bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-outline">Session Endpoints</p>
-            <p className="mt-2 text-sm font-semibold text-primary">List, active, detail, stop, and meter readings</p>
           </div>
         </section>
 

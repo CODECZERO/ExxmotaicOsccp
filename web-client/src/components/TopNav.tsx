@@ -1,27 +1,33 @@
+"use client";
+
+import { usePathname } from 'next/navigation';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/sites': 'Chargers',
+  '/sessions': 'Sessions',
+};
+
+function getPageTitle(pathname: string) {
+  if (pathname.startsWith('/sites/')) {
+    return 'Charger Detail';
+  }
+  if (pathname.startsWith('/sessions/')) {
+    return 'Session Detail';
+  }
+  return PAGE_TITLES[pathname] ?? 'EV Operations';
+}
+
 export default function TopNav() {
+  const pathname = usePathname();
+
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 z-10 flex justify-between items-center px-8">
-      <div className="flex items-center bg-surface-container-low px-4 py-2 rounded-full w-96">
-        <span className="material-symbols-outlined text-outline text-xl">search</span>
-        <input className="bg-transparent border-none focus:ring-0 text-sm w-full font-body outline-none" placeholder="Search sessions or chargers..." type="text"/>
+    <header className="fixed top-0 right-0 z-10 flex h-16 w-[calc(100%-16rem)] items-center justify-between border-b border-slate-100 bg-white/80 px-8 backdrop-blur-md">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.24em] text-outline">OCPP Live View</p>
+        <h2 className="mt-1 text-lg font-black tracking-tight text-primary">{getPageTitle(pathname)}</h2>
       </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-secondary font-bold text-sm bg-secondary/10 px-3 py-1.5 rounded-full">
-          <span className="material-symbols-outlined text-lg">sync</span>
-          Live polling
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="hover:bg-slate-50 rounded-full p-2 text-on-surface-variant transition-all cursor-pointer">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="hover:bg-slate-50 rounded-full p-2 text-on-surface-variant transition-all cursor-pointer">
-            <span className="material-symbols-outlined">account_circle</span>
-          </button>
-          <button className="hover:bg-slate-50 rounded-full p-2 text-on-surface-variant transition-all cursor-pointer">
-            <span className="material-symbols-outlined">power_settings_new</span>
-          </button>
-        </div>
-      </div>
+      <span className="rounded-full bg-secondary/10 px-3 py-1.5 text-sm font-bold text-secondary">Live data</span>
     </header>
   );
 }

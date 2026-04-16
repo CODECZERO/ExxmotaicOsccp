@@ -37,20 +37,10 @@ export default function NetworkSummary() {
       <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
         <section className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-secondary">Operations Overview</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">EV network command center</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Live backend statistics, active charger health, session throughput, and recent activity from the OCPP platform.
             </p>
-          </div>
-
-          <div className="rounded-[2rem] border border-surface-container bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-outline">Backend Coverage</p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <StatusBadge label={`${formatInteger(stats?.chargers.total ?? 0)} chargers`} />
-              <StatusBadge label={`${formatInteger(stats?.sessions.active ?? 0)} active sessions`} />
-              <StatusBadge label={`${formatInteger(stats?.commands.total ?? 0)} commands`} />
-            </div>
           </div>
         </section>
 
@@ -169,9 +159,6 @@ export default function NetworkSummary() {
               <h2 className="text-2xl font-black tracking-tight text-primary">Recently seen chargers</h2>
               <p className="mt-1 text-sm text-on-surface-variant">Using the live charger registry returned by `GET /api/chargers`.</p>
             </div>
-            <Link href="/sites" className="rounded-xl border border-surface-container px-4 py-2 text-sm font-bold text-primary">
-              Open registry
-            </Link>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
