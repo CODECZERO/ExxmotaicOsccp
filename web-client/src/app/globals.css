@@ -1,7 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+
+:root {
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-black: #000;
@@ -53,12 +56,11 @@
   --color-tertiary-fixed-dim: #ffb95f;
   --color-on-primary: #ffffff;
   --color-error: #ba1a1a;
-  --font-body: var(--font-inter);
-  --font-headline: var(--font-manrope);
 }
 
 body {
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-inter), sans-serif;
   background-color: var(--color-background);
   color: var(--color-on-surface);
 }
+

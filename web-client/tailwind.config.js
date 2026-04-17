@@ -1,0 +1,46 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: 'var(--color-primary)',
+        secondary: 'var(--color-secondary)',
+        background: 'var(--color-background)',
+        surface: 'var(--color-surface)',
+        error: 'var(--color-error)',
+        'on-primary': 'var(--color-on-primary)',
+        'on-secondary': 'var(--color-on-secondary)',
+        'on-background': 'var(--color-on-background)',
+        'on-surface': 'var(--color-on-surface)',
+        'on-error': 'var(--color-on-error)',
+        outline: 'var(--color-outline)',
+        'outline-variant': 'var(--color-outline-variant)',
+        'surface-variant': 'var(--color-surface-variant)',
+        'on-surface-variant': 'var(--color-on-surface-variant)',
+        'surface-container': 'var(--color-surface-container)',
+        'surface-container-low': 'var(--color-surface-container-low)',
+        'surface-container-high': 'var(--color-surface-container-high)',
+        'surface-container-lowest': 'var(--color-surface-container-lowest)',
+        'primary-container': 'var(--color-primary-container)',
+        'on-primary-container': 'var(--color-on-primary-container)',
+        'secondary-container': 'var(--color-secondary-container)',
+        'on-secondary-container': 'var(--color-on-secondary-container)',
+        'tertiary-container': 'var(--color-tertiary-container)',
+        'on-tertiary-container': 'var(--color-on-tertiary-container)',
+        'inverse-surface': 'var(--color-inverse-surface)',
+        'inverse-on-surface': 'var(--color-inverse-on-surface)',
+        'inverse-primary': 'var(--color-inverse-primary)',
+      },
+      fontFamily: {
+        body: ['var(--font-inter)', 'sans-serif'],
+        headline: ['var(--font-manrope)', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+};

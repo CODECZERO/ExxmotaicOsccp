@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useEffectEvent, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useSWRConfig } from 'swr';
 
 import { buildLiveStreamUrl } from '@/lib/api';
@@ -27,22 +27,27 @@ export function useLiveStream({ keys, chargerId, sessionId, enabled = true }: Li
     });
   }, [chargerId, enabled, keys.length, sessionId]);
 
-  const handleUpdate = useEffectEvent(() => {
+  const latestKeys = useRef(keys);
+  useEffect(() => {
+    latestKeys.current = keys;
+  }, [keys]);
+
+  const handleUpdate = useCallback(() => {
     setConnected(true);
     startTransition(() => {
-      for (const key of keys) {
+      for (const key of latestKeys.current) {
         void mutate(key);
       }
     });
-  });
+  }, [mutate]);
 
-  const handleOpen = useEffectEvent(() => {
+  const handleOpen = useCallback(() => {
     setConnected(true);
-  });
+  }, []);
 
-  const handleError = useEffectEvent(() => {
+  const handleError = useCallback(() => {
     setConnected(false);
-  });
+  }, []);
 
   useEffect(() => {
     if (!streamUrl) {
