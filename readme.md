@@ -97,8 +97,30 @@ Charger  → Cloudflare → HAProxy :80 → OCPP Core  :5000
 | haproxy | 80 | Reverse proxy — routes all incoming traffic from Cloudflare via Host/Path |
 | server (api) | 5050 | Flask REST API — Dashboard logic and SQLAlchemy DB management |
 | frontend | 3000 | Next.js dashboard — Server-rendered UI |
-| ocpp-core | 5000 | Production OCPP WebSocket server — unified V1.6/V20 |
-| ocpp-echo | 8000 | Debug echo WebSocket server |
+| ocpp-core | 5000 | Production OCPP WebSocket server — unified V1.6/V20.1 |
+| ocpp-echo | 8000 | Engineering Sandbox Server (Standard 1.6 focus) |
+| ocpp-echo-n | 5001 | Engineering Sandbox Server (Standard 2.0.1 focus) |
+
+### 🔌 OCPP Hardware Connection URLs
+
+Provide these links to your hardware chargers or engineering team. Ensure you replace `YOUR_CHARGER_ID` with the actual identifier.
+
+**1. Production Core Server (The Real Unified System)**
+Use this for actual production deployment. The server automatically conforms to the format you request:
+*   **OCPP 1.6 Devices:** `wss://YOUR_DOMAIN/ocpp/1.6/YOUR_CHARGER_ID`
+*   **OCPP 2.0.1 Devices:** `wss://YOUR_DOMAIN/ocpp/2.0.1/YOUR_CHARGER_ID`
+
+**2. Echo Server (Engineering Sandbox for OCPP 1.6)**
+Use this strictly for debugging old-standard hardware without polluting your production database.
+*   **Connection URL:** `wss://YOUR_DOMAIN/ocpp-echo/1.6/YOUR_CHARGER_ID`
+
+**3. Echo-N Server (Engineering Sandbox for OCPP 2.0.1)**
+Use this strictly for testing new-standard hardware natively.
+*   **Connection URL:** `wss://YOUR_DOMAIN/ocpp-echo-n/2.0.1/YOUR_CHARGER_ID`
+
+### 📱 Main App URL (Frontend Dashboard)
+Simply visit this in your web browser to manage your platform:
+*   **Dashboard URL:** `https://YOUR_DOMAIN`
 
 ### HTTP REST API Endpoints (Frontend Use)
 The API is stateless and communicates directly to PostgreSQL. Cloudflare routes requests to `/api` directly to Flask.
