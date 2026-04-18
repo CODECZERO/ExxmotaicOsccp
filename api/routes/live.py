@@ -12,8 +12,25 @@ from api.controllers import live_controller
 
 live_bp = Blueprint("live", __name__, url_prefix="/api")
 
-STREAM_POLL_INTERVAL_S = 2.0
+STREAM_POLL_INTERVAL_S = 0.5
 STREAM_KEEPALIVE_INTERVAL_S = 15.0
+
+
+@live_bp.route("/live/snapshot", methods=["GET"])
+def live_snapshot() -> Response:
+    """GET /api/live/snapshot — return a point-in-time state of the dashboard."""
+    charger_id = request.args.get("charger_id") or None
+    session_id = request.args.get("session_id") or None
+    
+    snapshot = live_controller.build_snapshot(
+        charger_id=charger_id,
+        session_id=session_id,
+    )
+    return Response(
+        json.dumps(snapshot),
+        mimetype="application/json",
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 
 @live_bp.route("/live/stream", methods=["GET"])

@@ -95,8 +95,8 @@ Charger  → Cloudflare → HAProxy :80 → OCPP Core  :5000
 | Service | Port | Purpose |
 |---|---|---|
 | haproxy | 80 | Reverse proxy — routes all incoming traffic from Cloudflare via Host/Path |
-| server (api) | 5050 | Flask REST API — Dashboard logic and SQLAlchemy DB management |
-| frontend | 3000 | Next.js dashboard — Server-rendered UI |
+| server (api) | 5050 | Flask REST API — Dashboard logic and DB management |
+| frontend | 3000 | Next.js dashboard — UI with 0.5s real-time refresh |
 | ocpp-core | 5000 | Production OCPP WebSocket server — unified V1.6/V20.1 |
 | ocpp-echo | 8000 | Engineering Sandbox Server (Standard 1.6 focus) |
 | ocpp-echo-n | 5001 | Engineering Sandbox Server (Standard 2.0.1 focus) |
@@ -131,6 +131,8 @@ The API is stateless and communicates directly to PostgreSQL. Cloudflare routes 
 | `GET  /api/stats` | Platform-wide aggregation |
 | `GET  /api/chargers/<id>` | Hardware info & status |
 | `GET  /api/sessions/<id>` | Charging session detail & energy consumed |
+| `GET  /api/live/snapshot` | **NEW**: Point-in-time dashboard state (instant load) |
+| `GET  /api/live/stream` | **SSE**: Real-time 0.5s pulse stream |
 | `POST /api/chargers/<id>/stop` | Remotely stop an active session |
 | `POST /api/chargers/<id>/reset` | Trigger a remote soft/hard hardware reboot |
 

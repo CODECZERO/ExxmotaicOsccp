@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from ocpp.routing import on
 from ocpp.v16 import ChargePoint as _OcppV16CP, call
-from ocpp.v16.enums import Action, RegistrationStatusType, RemoteStartStopStatus, ResetStatus, UnlockStatus
+from ocpp.v16.enums import Action
 
 from core.V16.boot_notification import handle_boot_notification
 from core.V16.heartbeat import handle_heartbeat
@@ -26,7 +27,8 @@ class V16ChargePoint(_OcppV16CP):
     async def on_boot_notification(
         self, charge_point_vendor: str, charge_point_model: str, **kwargs
     ):
-        return handle_boot_notification(
+        return await asyncio.to_thread(
+            handle_boot_notification,
             charge_point_id=self.id,
             charge_point_vendor=charge_point_vendor,
             charge_point_model=charge_point_model,
@@ -35,13 +37,14 @@ class V16ChargePoint(_OcppV16CP):
 
     @on(Action.heartbeat)
     async def on_heartbeat(self, **kwargs):
-        return handle_heartbeat(charge_point_id=self.id, **kwargs)
+        return await asyncio.to_thread(handle_heartbeat, charge_point_id=self.id, **kwargs)
 
     @on(Action.status_notification)
     async def on_status_notification(
         self, connector_id: int, error_code: str, status: str, **kwargs
     ):
-        return handle_status_notification(
+        return await asyncio.to_thread(
+            handle_status_notification,
             charge_point_id=self.id,
             connector_id=connector_id,
             error_code=error_code,
@@ -51,7 +54,7 @@ class V16ChargePoint(_OcppV16CP):
 
     @on(Action.authorize)
     async def on_authorize(self, id_tag: str, **kwargs):
-        return handle_authorize(id_tag=id_tag, **kwargs)
+        return await asyncio.to_thread(handle_authorize, id_tag=id_tag, **kwargs)
 
     @on(Action.start_transaction)
     async def on_start_transaction(
@@ -62,7 +65,8 @@ class V16ChargePoint(_OcppV16CP):
         timestamp: str,
         **kwargs,
     ):
-        return handle_start_transaction(
+        return await asyncio.to_thread(
+            handle_start_transaction,
             charge_point_id=self.id,
             connector_id=connector_id,
             id_tag=id_tag,
@@ -75,7 +79,8 @@ class V16ChargePoint(_OcppV16CP):
     async def on_stop_transaction(
         self, meter_stop: int, timestamp: str, transaction_id: int, **kwargs
     ):
-        return handle_stop_transaction(
+        return await asyncio.to_thread(
+            handle_stop_transaction,
             charge_point_id=self.id,
             meter_stop=meter_stop,
             timestamp=timestamp,
@@ -85,7 +90,8 @@ class V16ChargePoint(_OcppV16CP):
 
     @on(Action.meter_values)
     async def on_meter_values(self, connector_id: int, meter_value: list, **kwargs):
-        return handle_meter_values(
+        return await asyncio.to_thread(
+            handle_meter_values,
             charge_point_id=self.id,
             connector_id=connector_id,
             meter_value=meter_value,
@@ -94,24 +100,24 @@ class V16ChargePoint(_OcppV16CP):
 
     async def remote_start(self, id_tag: str, connector_id: int = 1) -> str:
         """Send RemoteStartTransaction to the charger."""
-        request = call.RemoteStartTransactionPayload(id_tag=id_tag, connector_id=connector_id)
+        request = call.RemoteStartTransaction(id_tag=id_tag, connector_id=connector_id)
         response = await self.call(request)
         return response.status
 
     async def remote_stop(self, transaction_id: int) -> str:
         """Send RemoteStopTransaction to the charger."""
-        request = call.RemoteStopTransactionPayload(transaction_id=transaction_id)
+        request = call.RemoteStopTransaction(transaction_id=transaction_id)
         response = await self.call(request)
         return response.status
 
     async def reset(self, reset_type: str = "Soft") -> str:
         """Send Reset command."""
-        request = call.ResetPayload(type=reset_type)
+        request = call.Reset(type=reset_type)
         response = await self.call(request)
         return response.status
 
     async def unlock(self, connector_id: int = 1) -> str:
         """Send UnlockConnector command."""
-        request = call.UnlockConnectorPayload(connector_id=connector_id)
+        request = call.UnlockConnector(connector_id=connector_id)
         response = await self.call(request)
         return response.status

@@ -191,7 +191,7 @@ class CommandLog(Base):
     )
     command = Column(String(64), nullable=False)
     payload = Column(JSON, nullable=True)
-    status = Column(String(32), nullable=False, default="Pending")
+    status = Column(String(255), nullable=False, default="Pending")
     ocpp_version = Column(String(8), nullable=True)
     created_at = Column(
         DateTime(timezone=True),

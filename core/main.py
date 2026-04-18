@@ -16,6 +16,7 @@ from shared.env import load_env  # noqa: E402
 
 load_env()
 
+from shared.constants import CORE_PORT, BIND_HOST, LOG_LEVEL   # noqa: E402
 from core.router import detect_version, get_subprotocols, create_charge_point
 from core.dispatcher import active_connections, start_command_poller   # noqa: E402
 

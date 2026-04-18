@@ -32,7 +32,7 @@ def _log_command(db, charger_id: str, command: str, payload: dict, ocpp_version:
         charger_id=charger_id,
         command=command,
         payload=payload,
-        status="Accepted",
+        status="Pending",
         ocpp_version=ocpp_version,
     )
     db.add(log_entry)

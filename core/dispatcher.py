@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
 from shared.db.client import get_db, db_available
@@ -15,7 +16,14 @@ logger = logging.getLogger(__name__)
 # Key: charger_id (str), Value: ChargePoint instance
 active_connections: Dict[str, Any] = {}
 
-async def start_command_poller(interval: float = 2.0):
+# How long a "Pending" command stays valid before being auto-expired
+COMMAND_TTL_SECONDS = 30
+
+# Per-dispatch timeout — prevents a single stuck command from blocking the poller
+DISPATCH_TIMEOUT_SECONDS = 10
+
+
+async def start_command_poller(interval: float = 1.0):
     """
     Background loop that polls the DB for 'Pending' commands for ANY charger
     currently connected to this specific process.
@@ -28,26 +36,54 @@ async def start_command_poller(interval: float = 2.0):
             continue
             
         try:
-            # We only look for commands where status is 'Accepted' (meaning the API received it)
-            # but hasn't been 'Processed' by the WebSocket server yet.
-            # In our command_controller, we set status="Accepted" by default.
-            
             with get_db() as db:
                 if db is None:
                     await asyncio.sleep(interval)
                     continue
                 
-                # Find pending commands for chargers we are actually hosting
+                # 1. Expire stale pending commands that are older than TTL
+                cutoff = datetime.now(tz=timezone.utc) - timedelta(seconds=COMMAND_TTL_SECONDS)
+                stale = (
+                    db.query(CommandLog)
+                    .filter(CommandLog.status == "Pending")
+                    .filter(CommandLog.created_at < cutoff)
+                    .all()
+                )
+                for cmd in stale:
+                    cmd.status = "Expired"
+                    logger.info("Expired stale command %s (#%s) for %s", cmd.command, cmd.id, cmd.charger_id)
+                if stale:
+                    db.commit()
+
+                # 2. Find pending commands for chargers we are actually hosting,
+                #    ordered FIFO by creation time so commands arrive in the right order.
+                if not active_connections:
+                    await asyncio.sleep(interval)
+                    continue
+
                 pending = (
                     db.query(CommandLog)
-                    .filter(CommandLog.status == "Accepted")
+                    .filter(CommandLog.status == "Pending")
                     .filter(CommandLog.charger_id.in_(active_connections.keys()))
+                    .order_by(CommandLog.created_at.asc())
                     .all()
                 )
                 
+                # 3. Dispatch each command with a per-command timeout
                 for cmd in pending:
-                    await _dispatch_command(cmd)
-                    db.commit() # Update status to 'Processed' or 'Failed'
+                    try:
+                        await asyncio.wait_for(
+                            _dispatch_command(cmd),
+                            timeout=DISPATCH_TIMEOUT_SECONDS,
+                        )
+                    except asyncio.TimeoutError:
+                        logger.warning(
+                            "Dispatch of %s to %s timed out after %ds",
+                            cmd.command, cmd.charger_id, DISPATCH_TIMEOUT_SECONDS,
+                        )
+                        cmd.status = f"Error: Dispatch timeout ({DISPATCH_TIMEOUT_SECONDS}s)"
+                    
+                    db.commit()
                     
         except Exception:
             logger.exception("Error in CommandPoller loop")
@@ -108,4 +144,4 @@ async def _dispatch_command(cmd: CommandLog):
         
     except Exception as e:
         logger.exception("Failed to dispatch command to %s", charger_id)
-        cmd.status = f"Error: {str(e)[:28]}"
+        cmd.status = f"Error: {str(e)[:250]}"

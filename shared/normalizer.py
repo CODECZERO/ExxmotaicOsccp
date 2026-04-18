@@ -158,8 +158,7 @@ def normalize_tx_event_v201(
 def _parse_sampled_values(sampled_value: List[Dict[str, Any]]) -> Dict[str, Optional[float]]:
     """
     Extract known measurands from a list of sampled values.
-
-    Works for both V16 and V201 — the sampled_value structure is similar.
+    Handles both V16 (standard) and V201 formats.
     """
     result: Dict[str, Optional[float]] = {
         "energy_wh": None,
@@ -169,26 +168,48 @@ def _parse_sampled_values(sampled_value: List[Dict[str, Any]]) -> Dict[str, Opti
         "soc": None,
     }
 
+    if not sampled_value:
+        return result
+
     for sample in sampled_value:
-        value_str = str(sample.get("value", ""))
+        # Safely handle '0' which is falsy without wiping it
+        val_raw = sample.get("value")
+        if val_raw is None:
+            val_raw = sample.get("Value")
+        
         try:
-            value = float(value_str)
+            value = float(val_raw)
         except (ValueError, TypeError):
             continue
 
-        measurand = sample.get("measurand", "").lower().replace(".", "_").replace(" ", "_")
+        meas_raw = sample.get("measurand")
+        if meas_raw is None:
+            meas_raw = sample.get("Measurand")
+            
+        measurand = str(meas_raw or "").lower().replace(".", "_").replace(" ", "_")
+
+        # Unit Scaling
+        unit = str(sample.get("unit") or sample.get("Unit") or "").lower()
+        if unit == "kw" or unit == "kvar":
+            value *= 1000
+        elif unit == "kwh" or unit == "kvarh":
+            value *= 1000
 
         if "energy" in measurand and "import" in measurand:
             result["energy_wh"] = value
-        elif "power" in measurand and "import" in measurand:
+        elif "power" in measurand and ("active" in measurand or not measurand) and "import" in measurand:
             result["power_w"] = value
+        elif "power" in measurand and "active" in measurand:
+             result["power_w"] = value # Fallback for just "Power.Active"
         elif "voltage" in measurand:
             result["voltage"] = value
         elif "current" in measurand and "import" in measurand:
             result["current_a"] = value
+        elif "current" in measurand:
+            result["current_a"] = value # Fallback for just "Current"
         elif "soc" in measurand:
             result["soc"] = value
-        elif not sample.get("measurand"):
+        elif not measurand:
             # Default measurand is Energy.Active.Import.Register
             result["energy_wh"] = value
 
@@ -203,8 +224,12 @@ def normalize_meter_v16(
     """Normalize V16 MeterValues into a list of meter reading dicts."""
     readings = []
     for mv in meter_value:
-        ts = mv.get("timestamp", datetime.now(tz=timezone.utc).isoformat())
-        sampled = mv.get("sampled_value", [])
+        # Check both cases for timestamp
+        ts = mv.get("timestamp") or mv.get("Timestamp") or datetime.now(tz=timezone.utc).isoformat()
+        
+        # Check both cases for sampled values
+        sampled = mv.get("sampled_value") or mv.get("sampledValue") or mv.get("SampledValue") or []
+        
         parsed = _parse_sampled_values(sampled)
         readings.append({
             "connector_id": connector_id,
@@ -224,8 +249,12 @@ def normalize_meter_v201(
     """Normalize V201 MeterValues into a list of meter reading dicts."""
     readings = []
     for mv in meter_value:
-        ts = mv.get("timestamp", datetime.now(tz=timezone.utc).isoformat())
-        sampled = mv.get("sampled_value", [])
+        # Check both cases for timestamp
+        ts = mv.get("timestamp") or mv.get("Timestamp") or datetime.now(tz=timezone.utc).isoformat()
+        
+        # Check both cases for sampled values
+        sampled = mv.get("sampled_value") or mv.get("sampledValue") or mv.get("SampledValue") or []
+        
         parsed = _parse_sampled_values(sampled)
         readings.append({
             "connector_id": 1,  # V201 uses evse_id as primary

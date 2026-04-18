@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as _OcppV201CP, call
-from ocpp.v201.enums import Action, RequestStartStopStatusEnumType, ResetStatusEnumType, UnlockStatusEnumType
+from ocpp.v201.enums import Action
 
 from core.V20.boot_notification import handle_boot_notification
 from core.V20.heartbeat import handle_heartbeat
@@ -25,7 +26,8 @@ class V201ChargePoint(_OcppV201CP):
     async def on_boot_notification(
         self, charging_station: dict, reason: str, **kwargs
     ):
-        return handle_boot_notification(
+        return await asyncio.to_thread(
+            handle_boot_notification,
             charge_point_id=self.id,
             charging_station=charging_station,
             reason=reason,
@@ -34,7 +36,7 @@ class V201ChargePoint(_OcppV201CP):
 
     @on(Action.heartbeat)
     async def on_heartbeat(self, **kwargs):
-        return handle_heartbeat(charge_point_id=self.id, **kwargs)
+        return await asyncio.to_thread(handle_heartbeat, charge_point_id=self.id, **kwargs)
 
     @on(Action.status_notification)
     async def on_status_notification(
@@ -45,7 +47,8 @@ class V201ChargePoint(_OcppV201CP):
         connector_id: int,
         **kwargs,
     ):
-        return handle_status_notification(
+        return await asyncio.to_thread(
+            handle_status_notification,
             charge_point_id=self.id,
             timestamp=timestamp,
             connector_status=connector_status,
@@ -64,7 +67,8 @@ class V201ChargePoint(_OcppV201CP):
         transaction_info: dict,
         **kwargs,
     ):
-        return handle_transaction_event(
+        return await asyncio.to_thread(
+            handle_transaction_event,
             charge_point_id=self.id,
             event_type=event_type,
             timestamp=timestamp,
@@ -76,7 +80,8 @@ class V201ChargePoint(_OcppV201CP):
 
     @on(Action.meter_values)
     async def on_meter_values(self, evse_id: int, meter_value: list, **kwargs):
-        return handle_meter_values(
+        return await asyncio.to_thread(
+            handle_meter_values,
             charge_point_id=self.id,
             evse_id=evse_id,
             meter_value=meter_value,
@@ -87,7 +92,8 @@ class V201ChargePoint(_OcppV201CP):
     async def on_notify_event(
         self, generated_at: str, seq_no: int, event_data: list, **kwargs
     ):
-        return handle_notify_event(
+        return await asyncio.to_thread(
+            handle_notify_event,
             charge_point_id=self.id,
             generated_at=generated_at,
             seq_no=seq_no,
@@ -97,7 +103,11 @@ class V201ChargePoint(_OcppV201CP):
 
     async def request_start(self, id_tag: str, evse_id: int = 1) -> str:
         """Send RequestStartTransaction to the station."""
-        request = call.RequestStartTransactionPayload(
+        import random
+        # OCPP 2.0.1 requires remoteStartId to track the request
+        remote_id = random.randint(1, 999999)
+        request = call.RequestStartTransaction(
+            remote_start_id=remote_id,
             id_token={"idToken": id_tag, "type": "ISO14443"},
             evse_id=evse_id
         )
@@ -106,18 +116,18 @@ class V201ChargePoint(_OcppV201CP):
 
     async def request_stop(self, transaction_id: str) -> str:
         """Send RequestStopTransaction to the station."""
-        request = call.RequestStopTransactionPayload(transaction_id=transaction_id)
+        request = call.RequestStopTransaction(transaction_id=transaction_id)
         response = await self.call(request)
         return response.status
 
     async def reset(self, reset_type: str = "OnIdle") -> str:
         """Send Reset command."""
-        request = call.ResetPayload(type=reset_type)
+        request = call.Reset(type=reset_type)
         response = await self.call(request)
         return response.status
 
     async def unlock(self, evse_id: int = 1, connector_id: int = 1) -> str:
         """Send UnlockConnector command."""
-        request = call.UnlockConnectorPayload(evse_id=evse_id, connector_id=connector_id)
+        request = call.UnlockConnector(evse_id=evse_id, connector_id=connector_id)
         response = await self.call(request)
         return response.status
