@@ -110,12 +110,12 @@ Use this for actual production deployment. The server automatically conforms to 
 *   **OCPP 1.6 Devices:** `wss://YOUR_DOMAIN/ocpp/1.6/YOUR_CHARGER_ID`
 *   **OCPP 2.0.1 Devices:** `wss://YOUR_DOMAIN/ocpp/2.0.1/YOUR_CHARGER_ID`
 
-**2. Echo Server (Engineering Sandbox for OCPP 1.6)**
-Use this strictly for debugging old-standard hardware without polluting your production database.
+**2. Echo Server (Engineering Sandbox for OCPP 1.6 only)**
+Use this strictly for debugging 1.6 standard hardware. It will **reject** 2.0.1 connections.
 *   **Connection URL:** `wss://YOUR_DOMAIN/ocpp-echo/1.6/YOUR_CHARGER_ID`
 
-**3. Echo-N Server (Engineering Sandbox for OCPP 2.0.1)**
-Use this strictly for testing new-standard hardware natively.
+**3. Echo-N Server (Engineering Sandbox for OCPP 2.0.1 only)**
+Use this strictly for testing new 2.0.1 standard hardware. It will **reject** 1.6 connections.
 *   **Connection URL:** `wss://YOUR_DOMAIN/ocpp-echo-n/2.0.1/YOUR_CHARGER_ID`
 
 ### 📱 Main App URL (Frontend Dashboard)

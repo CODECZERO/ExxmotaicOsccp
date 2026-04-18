@@ -16,12 +16,8 @@ from shared.env import load_env  # noqa: E402
 
 load_env()
 
-from shared.constants import CORE_PORT, BIND_HOST, LOG_LEVEL   # noqa: E402
-from core.router import (                                       # noqa: E402
-    detect_version,
-    get_subprotocols,
-    create_charge_point,
-)
+from core.router import detect_version, get_subprotocols, create_charge_point
+from core.dispatcher import active_connections, start_command_poller   # noqa: E402
 
 logging.basicConfig(
     level=LOG_LEVEL,
@@ -44,11 +40,14 @@ async def on_connect(connection):
     )
 
     cp = create_charge_point(charge_point_id, connection, version)
+    active_connections[charge_point_id] = cp
 
     try:
         await cp.start()
     except websockets.exceptions.ConnectionClosed:
         logger.info("Charger disconnected  id=%s", charge_point_id)
+    finally:
+        active_connections.pop(charge_point_id, None)
 
 
 async def main():
@@ -58,6 +57,9 @@ async def main():
         CORE_PORT,
         subprotocols=get_subprotocols(),
     )
+    
+    # Start the command poller as a background task
+    asyncio.create_task(start_command_poller())
     logger.info(
         "OCPP Core server listening on %s:%d  (1.6 + 2.0.1)",
         BIND_HOST,

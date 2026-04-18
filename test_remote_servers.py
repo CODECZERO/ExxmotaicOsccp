@@ -111,12 +111,47 @@ async def test_all():
     except Exception as e:
         print(f"{RED}✘ Persistence Check Exception:{RESET} {e}")
 
+    # 4. Remote Command API Check (Live Loop Test)
+    print(f"\n{BOLD}[4] Verifying End-to-End Command Delivery (API -> DB -> WSS)...{RESET}")
+    cmd_ok = False
+    try:
+        # We'll use the Production Core for this test
+        url = f"{WSS_URL}/ocpp/1.6/{charger_id}"
+        async with websockets.connect(url, subprotocols=["ocpp1.6"], open_timeout=5) as ws:
+            print(f"{GREEN}✔ Simulator connected to WSS.{RESET}")
+            
+            # Trigger the command via REST in a thread to not block
+            print(f"   -> Triggering Reset via REST API...")
+            api_url = f"{HTTPS_URL}/api/chargers/{charger_id}/reset"
+            requests.post(api_url, json={"type": "Soft"}, timeout=5)
+            
+            # Wait for the command to arrive over WSS
+            print(f"   -> Waiting for Reset command to arrive over WebSocket (max 10s)...")
+            msg = await asyncio.wait_for(ws.recv(), timeout=10)
+            print(f"   <- Received from Server: {msg}")
+            
+            if '"Reset"' in msg:
+                print(f"{GREEN}✔ Remote Command received successfully!{RESET}")
+                
+                # Mock a response back to the server to be a good citizen
+                msg_id = json.loads(msg)[1]
+                await ws.send(json.dumps([3, msg_id, {"status": "Accepted"}]))
+                cmd_ok = True
+            else:
+                print(f"{RED}✘ Unexpected message received: {msg}{RESET}")
+                
+    except asyncio.TimeoutError:
+        print(f"{RED}✘ Command Delivery timed out! (Is the Poller running on the server?){RESET}")
+    except Exception as e:
+        print(f"{RED}✘ Command Delivery Exception:{RESET} {e}")
+
     print(f"\n{BOLD}=== Test Summary ==={RESET}")
     print(f"REST API:     {'🟢 PASS' if api_ok else '🔴 FAIL'}")
     print(f"Core Server:  {'🟢 PASS' if core_ok else '🔴 FAIL'}")
     print(f"Echo Server:  {'🟢 PASS' if echo_ok else '🔴 FAIL'}")
     print(f"Echo-N Server:{'🟢 PASS' if echo_n_ok else '🔴 FAIL'}")
     print(f"DB Tracking:  {'🟢 PASS' if db_ok else '🔴 FAIL'}")
+    print(f"Command Loop: {'🟢 PASS' if cmd_ok else '🔴 FAIL'}")
 
 if __name__ == "__main__":
     asyncio.run(test_all())

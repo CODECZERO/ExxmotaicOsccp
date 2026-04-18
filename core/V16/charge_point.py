@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 
 from ocpp.routing import on
-from ocpp.v16 import ChargePoint as _OcppV16CP
-from ocpp.v16.enums import Action
+from ocpp.v16 import ChargePoint as _OcppV16CP, call
+from ocpp.v16.enums import Action, RegistrationStatusType, RemoteStartStopStatus, ResetStatus, UnlockStatus
 
 from core.V16.boot_notification import handle_boot_notification
 from core.V16.heartbeat import handle_heartbeat
@@ -91,3 +91,27 @@ class V16ChargePoint(_OcppV16CP):
             meter_value=meter_value,
             **kwargs,
         )
+
+    async def remote_start(self, id_tag: str, connector_id: int = 1) -> str:
+        """Send RemoteStartTransaction to the charger."""
+        request = call.RemoteStartTransactionPayload(id_tag=id_tag, connector_id=connector_id)
+        response = await self.call(request)
+        return response.status
+
+    async def remote_stop(self, transaction_id: int) -> str:
+        """Send RemoteStopTransaction to the charger."""
+        request = call.RemoteStopTransactionPayload(transaction_id=transaction_id)
+        response = await self.call(request)
+        return response.status
+
+    async def reset(self, reset_type: str = "Soft") -> str:
+        """Send Reset command."""
+        request = call.ResetPayload(type=reset_type)
+        response = await self.call(request)
+        return response.status
+
+    async def unlock(self, connector_id: int = 1) -> str:
+        """Send UnlockConnector command."""
+        request = call.UnlockConnectorPayload(connector_id=connector_id)
+        response = await self.call(request)
+        return response.status

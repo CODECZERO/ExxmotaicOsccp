@@ -24,6 +24,7 @@ from shared.constants import (  # noqa: E402
     OCPP_V201_SUBPROTOCOL,
 )
 from core.router import detect_version, create_charge_point  # noqa: E402
+from core.dispatcher import active_connections, start_command_poller  # noqa: E402
 
 logging.basicConfig(
     level=LOG_LEVEL,
@@ -46,11 +47,14 @@ async def _on_connect(connection):
     )
 
     cp = create_charge_point(charge_point_id, connection, version)
+    active_connections[charge_point_id] = cp
 
     try:
         await cp.start()
     except websockets.exceptions.ConnectionClosed:
         logger.info("Echo — charger disconnected  id=%s", charge_point_id)
+    finally:
+        active_connections.pop(charge_point_id, None)
 
 
 async def main():
@@ -58,8 +62,10 @@ async def main():
         _on_connect,
         BIND_HOST,
         ECHO_PORT,
-        subprotocols=[OCPP_V16_SUBPROTOCOL, OCPP_V201_SUBPROTOCOL],
+        subprotocols=[OCPP_V16_SUBPROTOCOL],
     )
+    # Start the command poller as a background task
+    asyncio.create_task(start_command_poller())
     logger.info(
         "Echo server ready on %s:%d  (V16 + V201 dual-version)",
         BIND_HOST,

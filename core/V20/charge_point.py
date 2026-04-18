@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 
 from ocpp.routing import on
-from ocpp.v201 import ChargePoint as _OcppV201CP
-from ocpp.v201.enums import Action
+from ocpp.v201 import ChargePoint as _OcppV201CP, call
+from ocpp.v201.enums import Action, RequestStartStopStatusEnumType, ResetStatusEnumType, UnlockStatusEnumType
 
 from core.V20.boot_notification import handle_boot_notification
 from core.V20.heartbeat import handle_heartbeat
@@ -94,3 +94,30 @@ class V201ChargePoint(_OcppV201CP):
             event_data=event_data,
             **kwargs,
         )
+
+    async def request_start(self, id_tag: str, evse_id: int = 1) -> str:
+        """Send RequestStartTransaction to the station."""
+        request = call.RequestStartTransactionPayload(
+            id_token={"idToken": id_tag, "type": "ISO14443"},
+            evse_id=evse_id
+        )
+        response = await self.call(request)
+        return response.status
+
+    async def request_stop(self, transaction_id: str) -> str:
+        """Send RequestStopTransaction to the station."""
+        request = call.RequestStopTransactionPayload(transaction_id=transaction_id)
+        response = await self.call(request)
+        return response.status
+
+    async def reset(self, reset_type: str = "OnIdle") -> str:
+        """Send Reset command."""
+        request = call.ResetPayload(type=reset_type)
+        response = await self.call(request)
+        return response.status
+
+    async def unlock(self, evse_id: int = 1, connector_id: int = 1) -> str:
+        """Send UnlockConnector command."""
+        request = call.UnlockConnectorPayload(evse_id=evse_id, connector_id=connector_id)
+        response = await self.call(request)
+        return response.status
