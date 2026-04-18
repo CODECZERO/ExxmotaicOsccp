@@ -56,7 +56,12 @@ class Charger(Base):
     command_logs = relationship("CommandLog", back_populates="charger", lazy="dynamic")
 
     def to_dict(self) -> dict:
-        """Serialize to a plain dict for API responses."""
+        """Serialize to a plain dict for API responses using dynamic status."""
+        effective_status = self.status
+        now = datetime.now(tz=timezone.utc)
+        if not self.last_heartbeat or (now - self.last_heartbeat).total_seconds() > 300:
+            effective_status = "Unavailable"
+
         return {
             "id": self.id,
             "charger_id": self.charger_id,
@@ -65,7 +70,7 @@ class Charger(Base):
             "serial_number": self.serial_number,
             "firmware_version": self.firmware_version,
             "ocpp_version": self.ocpp_version,
-            "status": self.status,
+            "status": effective_status,
             "error_code": self.error_code,
             "last_heartbeat": self.last_heartbeat.isoformat() if self.last_heartbeat else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,

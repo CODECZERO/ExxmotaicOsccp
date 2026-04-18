@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Tuple
 
 from sqlalchemy import func
@@ -31,15 +32,25 @@ def get_dashboard() -> Tuple[Dict[str, Any], int]:
             if db is None:
                 return {"error": "Database session unavailable"}, 503
 
+            threshold = datetime.now(tz=timezone.utc) - timedelta(minutes=5)
+            
+            # Dynamic status clause: If heartbeat is stale (>5m), mark as Unavailable
+            from sqlalchemy import case
+            effective_status = case(
+                (Charger.last_heartbeat < threshold, "Unavailable"),
+                (Charger.last_heartbeat.is_(None), "Unavailable"),
+                else_=Charger.status
+            )
+
             total_chargers = db.query(func.count(Charger.id)).scalar() or 0
             online_chargers = (
                 db.query(func.count(Charger.id))
-                .filter(Charger.status != "Unavailable")
+                .filter(effective_status != "Unavailable")
                 .scalar() or 0
             )
             chargers_by_status = dict(
-                db.query(Charger.status, func.count(Charger.id))
-                .group_by(Charger.status)
+                db.query(effective_status, func.count(Charger.id))
+                .group_by(effective_status)
                 .all()
             )
             chargers_by_version = dict(

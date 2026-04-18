@@ -45,10 +45,10 @@ export default function ActiveSession() {
 
   return (
     <div className="flex-1 bg-surface-container-lowest">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-4 md:px-8 pb-24 md:pb-12 pt-24 md:pt-28">
         <section className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">Charging session operations</h1>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary">Charging session operations</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Integrated with full session listing, active session view, per-session detail, and remote stop support from the backend.
             </p>
@@ -64,7 +64,7 @@ export default function ActiveSession() {
 
         <section className="grid grid-cols-1 gap-8 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-primary">Live now</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-primary">Live now</h2>
             <p className="mt-1 text-sm text-on-surface-variant">Using `GET /api/sessions/active`.</p>
             <div className="mt-6 space-y-3">
               {activeSessions.slice(0, 6).map((session) => (
@@ -75,7 +75,7 @@ export default function ActiveSession() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-black text-primary">#{session.transaction_id}</p>
+                      <p className="font-semibold text-primary">#{session.transaction_id}</p>
                       <p className="mt-1 text-sm text-on-surface-variant">{session.charger_id} · {session.id_tag || 'Guest / Public'}</p>
                     </div>
                     <StatusBadge label="Charging" />
@@ -92,7 +92,7 @@ export default function ActiveSession() {
           <div className="rounded-[2.5rem] border border-surface-container bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-surface-container p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-primary">All session records</h2>
+                <h2 className="text-2xl font-bold tracking-tight text-primary">All session records</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">Search charger IDs, transaction IDs, or user tags.</p>
               </div>
               <div className="relative w-full lg:w-80">
@@ -123,7 +123,7 @@ export default function ActiveSession() {
                   {filteredSessions.map((session) => (
                     <tr key={session.id} className="border-t border-surface-container">
                       <td className="px-8 py-5">
-                        <Link href={`/sessions/${session.id}`} className="font-black text-primary hover:text-secondary">
+                        <Link href={`/sessions/${session.id}`} className="font-semibold text-primary hover:text-secondary">
                           #{session.transaction_id}
                         </Link>
                       </td>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from 'next/font/google';
+import { DM_Sans, Manrope } from 'next/font/google';
 
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -7,9 +7,12 @@ import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import ErrorSuppressor from "@/components/ErrorSuppressor";
 
-const inter = Inter({
+import BottomNav from "@/components/BottomNav";
+
+const dmSans = DM_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-dm-sans',
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 const manrope = Manrope({
@@ -30,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${manrope.variable} antialiased light`}
+      className={`${dmSans.variable} ${manrope.variable} antialiased light`}
       suppressHydrationWarning
     >
       <head>
@@ -40,12 +43,13 @@ export default function RootLayout({
         <Providers>
           <ErrorSuppressor />
           <Sidebar />
-          <div className="flex-1 flex flex-col ml-64 min-h-screen">
+          <div className="flex-1 flex flex-col md:ml-64 min-h-screen pb-[72px] md:pb-0 relative">
             <TopNav />
             <main className="flex-1 bg-background font-headline">
               {children}
             </main>
           </div>
+          <BottomNav />
         </Providers>
       </body>
     </html>

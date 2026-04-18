@@ -100,7 +100,7 @@ def build_snapshot(
                 "db_available": True,
                 "charger": {
                     "exists": charger is not None,
-                    "status": charger.status if charger is not None else None,
+                    "status": charger.to_dict()["status"] if charger is not None else None,
                     "last_heartbeat": charger.last_heartbeat.isoformat()
                     if charger and charger.last_heartbeat
                     else None,

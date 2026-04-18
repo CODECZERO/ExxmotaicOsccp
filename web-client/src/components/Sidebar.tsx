@@ -2,13 +2,13 @@ import Link from 'next/link';
 
 export default function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col overflow-y-auto bg-slate-900 p-4">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col overflow-y-auto bg-slate-900 p-4">
       <div className="mb-8 flex items-center gap-3 px-4">
         <span className="material-symbols-outlined text-2xl text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
           ev_charger
         </span>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">VoltMetric Pro</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white">VoltMetric Pro</h1>
           <p className="text-[10px] uppercase tracking-widest text-on-primary-container">Infrastructure MGMT</p>
         </div>
       </div>
