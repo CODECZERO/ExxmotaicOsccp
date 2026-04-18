@@ -1,0 +1,1 @@
+self.__NEXT_FONT_MANIFEST='{"pages":{},"app":{"/home/codeczero/Desktop/FullStack/exxmotaicOSCCP/web-client/src/app/layout":["static/media/13971731025ec697-s.p.woff2","static/media/4c9affa5bc8f420e-s.p.woff2"]},"appUsingSizeAdjust":true,"pagesUsingSizeAdjust":false}';

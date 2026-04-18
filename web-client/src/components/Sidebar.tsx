@@ -8,7 +8,7 @@ export default function Sidebar() {
           ev_charger
         </span>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">VoltMetric Pro</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white">VoltMetric Pro</h1>
           <p className="text-[10px] uppercase tracking-widest text-on-primary-container">Infrastructure MGMT</p>
         </div>
       </div>
