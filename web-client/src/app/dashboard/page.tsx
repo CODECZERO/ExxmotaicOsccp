@@ -22,7 +22,7 @@ export default function NetworkSummary() {
       <div className="flex min-h-screen flex-1 items-center justify-center bg-surface-container-lowest">
         <div className="rounded-[2rem] border border-error/20 bg-white p-8 text-center shadow-xl">
           <span className="material-symbols-outlined text-6xl text-error">cloud_off</span>
-          <h2 className="mt-4 text-2xl font-bold text-primary">Backend Unreachable</h2>
+          <h2 className="mt-4 text-2xl font-black text-primary">Backend Unreachable</h2>
           <p className="mt-2 text-on-surface-variant">Dashboard data could not be loaded from the API.</p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export default function NetworkSummary() {
       <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
         <section className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary">EV network command center</h1>
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">EV network command center</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Live backend statistics, active charger health, session throughput, and recent activity from the OCPP platform.
             </p>
@@ -71,10 +71,10 @@ export default function NetworkSummary() {
           <div className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-primary">Active sessions</h2>
+                <h2 className="text-2xl font-black tracking-tight text-primary">Active sessions</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">Using `GET /api/sessions/active` with direct session links.</p>
               </div>
-              <Link href="/sessions" className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">
+              <Link href="/sessions" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white">
                 View all sessions
               </Link>
             </div>
@@ -120,13 +120,13 @@ export default function NetworkSummary() {
 
           <div className="space-y-8">
             <div className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
-              <h2 className="text-2xl font-bold tracking-tight text-primary">Status distribution</h2>
+              <h2 className="text-2xl font-black tracking-tight text-primary">Status distribution</h2>
               <div className="mt-6 space-y-3">
                 {statusEntries.length > 0 ? (
                   statusEntries.map(([status, count]) => (
                     <div key={status} className="flex items-center justify-between rounded-2xl bg-surface-container-low px-4 py-3">
                       <StatusBadge label={status} />
-                      <span className="text-lg font-bold text-primary">{formatInteger(count)}</span>
+                      <span className="text-lg font-black text-primary">{formatInteger(count)}</span>
                     </div>
                   ))
                 ) : (
@@ -136,13 +136,13 @@ export default function NetworkSummary() {
             </div>
 
             <div className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
-              <h2 className="text-2xl font-bold tracking-tight text-primary">Protocol versions</h2>
+              <h2 className="text-2xl font-black tracking-tight text-primary">Protocol versions</h2>
               <div className="mt-6 space-y-3">
                 {versionEntries.length > 0 ? (
                   versionEntries.map(([version, count]) => (
                     <div key={version} className="flex items-center justify-between rounded-2xl bg-surface-container-low px-4 py-3">
-                      <span className="text-sm font-bold uppercase tracking-[0.2em] text-outline">OCPP {version}</span>
-                      <span className="text-lg font-bold text-primary">{formatInteger(count)}</span>
+                      <span className="text-sm font-black uppercase tracking-[0.2em] text-outline">OCPP {version}</span>
+                      <span className="text-lg font-black text-primary">{formatInteger(count)}</span>
                     </div>
                   ))
                 ) : (
@@ -156,7 +156,7 @@ export default function NetworkSummary() {
         <section className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-primary">Recently seen chargers</h2>
+              <h2 className="text-2xl font-black tracking-tight text-primary">Recently seen chargers</h2>
               <p className="mt-1 text-sm text-on-surface-variant">Using the live charger registry returned by `GET /api/chargers`.</p>
             </div>
           </div>
@@ -170,12 +170,12 @@ export default function NetworkSummary() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-lg font-semibold tracking-tight text-primary">{charger.charger_id}</p>
+                    <p className="text-lg font-black tracking-tight text-primary">{charger.charger_id}</p>
                     <p className="mt-1 text-sm font-medium text-on-surface-variant">{charger.vendor} · {charger.model}</p>
                   </div>
                   <StatusBadge label={charger.status} />
                 </div>
-                <div className="mt-4 text-xs font-medium uppercase tracking-[0.2em] text-outline">
+                <div className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-outline">
                   Last heartbeat: {formatDateTime(charger.last_heartbeat)}
                 </div>
               </Link>

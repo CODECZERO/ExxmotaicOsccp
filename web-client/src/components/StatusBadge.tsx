@@ -19,7 +19,7 @@ export default function StatusBadge({ label }: StatusBadgeProps) {
   const className = statusClasses[normalized] ?? 'bg-surface-container text-primary border-surface-container-high';
 
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${className}`}>
+    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wider ${className}`}>
       {label}
     </span>
   );

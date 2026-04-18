@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Manrope } from 'next/font/google';
+import { Inter, Manrope } from 'next/font/google';
 
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -7,10 +7,9 @@ import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import ErrorSuppressor from "@/components/ErrorSuppressor";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
-  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter',
 });
 
 const manrope = Manrope({
@@ -31,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${manrope.variable} antialiased light`}
+      className={`${inter.variable} ${manrope.variable} antialiased light`}
       suppressHydrationWarning
     >
       <head>

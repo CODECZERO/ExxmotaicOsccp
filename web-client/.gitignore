@@ -14,7 +14,7 @@
 /coverage
 
 # next.js
-# /.next/  <-- Commented out to push pre-build to AWS
+/.next/
 /out/
 
 # production

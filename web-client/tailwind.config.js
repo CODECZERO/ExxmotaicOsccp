@@ -37,7 +37,7 @@ module.exports = {
         'inverse-primary': 'var(--color-inverse-primary)',
       },
       fontFamily: {
-        body: ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
+        body: ['var(--font-inter)', 'sans-serif'],
         headline: ['var(--font-manrope)', 'sans-serif'],
       },
     },

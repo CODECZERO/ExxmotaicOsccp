@@ -86,7 +86,7 @@ export default function SiteManagement() {
       <div className="flex min-h-screen flex-1 items-center justify-center bg-surface-container-lowest">
         <div className="rounded-[2rem] border border-error/20 bg-white p-8 text-center shadow-xl">
           <span className="material-symbols-outlined text-6xl text-error">dns</span>
-          <h2 className="mt-4 text-2xl font-bold text-primary">Registry Unavailable</h2>
+          <h2 className="mt-4 text-2xl font-black text-primary">Registry Unavailable</h2>
           <p className="mt-2 text-on-surface-variant">Unable to synchronize chargers from the backend.</p>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function SiteManagement() {
       <section className="mx-auto flex max-w-[1600px] flex-col gap-8 px-8 pb-12 pt-28">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-primary">Charger management and hardware inventory</h1>
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-primary">Charger management and hardware inventory</h1>
             <p className="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">
               Frontend is now wired to charger CRUD, per-charger detail, sessions, command history, and meter data from the backend API.
             </p>
@@ -123,14 +123,14 @@ export default function SiteManagement() {
           <form onSubmit={handleCreateCharger} className="rounded-[2.5rem] border border-surface-container bg-white p-8 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-primary">Register charger</h2>
+                <h2 className="text-2xl font-black tracking-tight text-primary">Register charger</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">Uses `POST /api/chargers` without backend changes.</p>
               </div>
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-outline">Charger ID</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-outline">Charger ID</span>
                 <input
                   required
                   value={form.charger_id}
@@ -188,7 +188,7 @@ export default function SiteManagement() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl bg-primary px-6 py-3 text-sm font-black text-white shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving ? 'Saving...' : 'Create Charger'}
               </button>
@@ -198,7 +198,7 @@ export default function SiteManagement() {
           <div className="rounded-[2.5rem] border border-surface-container bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-surface-container p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-primary">Hardware catalog</h2>
+                <h2 className="text-2xl font-black tracking-tight text-primary">Hardware catalog</h2>
                 <p className="mt-1 text-sm text-on-surface-variant">Open any charger to view stats, remote commands, sessions, and meter values.</p>
               </div>
               <div className="relative w-full lg:w-80">
@@ -229,7 +229,7 @@ export default function SiteManagement() {
                   {filteredChargers.map((charger) => (
                     <tr key={charger.id} className="border-t border-surface-container">
                       <td className="px-8 py-5">
-                        <Link href={`/sites/${charger.charger_id}`} className="font-semibold text-primary hover:text-secondary">
+                        <Link href={`/sites/${charger.charger_id}`} className="font-black text-primary hover:text-secondary">
                           {charger.charger_id}
                         </Link>
                       </td>
