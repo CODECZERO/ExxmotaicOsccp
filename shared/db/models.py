@@ -51,9 +51,9 @@ class Charger(Base):
     )
 
     # Relationships
-    sessions = relationship("ChargingSession", back_populates="charger", lazy="dynamic")
-    meter_values = relationship("MeterValue", back_populates="charger", lazy="dynamic")
-    command_logs = relationship("CommandLog", back_populates="charger", lazy="dynamic")
+    sessions = relationship("ChargingSession", back_populates="charger", lazy="dynamic", cascade="all, delete-orphan")
+    meter_values = relationship("MeterValue", back_populates="charger", lazy="dynamic", cascade="all, delete-orphan")
+    command_logs = relationship("CommandLog", back_populates="charger", lazy="dynamic", cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict for API responses using dynamic status."""
@@ -86,7 +86,7 @@ class ChargingSession(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     charger_id = Column(
         String(64),
-        ForeignKey("chargers.charger_id"),
+        ForeignKey("chargers.charger_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -109,7 +109,7 @@ class ChargingSession(Base):
     # Relationships
     charger = relationship("Charger", back_populates="sessions", foreign_keys=[charger_id],
                            primaryjoin="ChargingSession.charger_id == Charger.charger_id")
-    meter_values = relationship("MeterValue", back_populates="session", lazy="dynamic")
+    meter_values = relationship("MeterValue", back_populates="session", lazy="dynamic", cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict for API responses."""
@@ -137,10 +137,10 @@ class MeterValue(Base):
     __tablename__ = "meter_values"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=True, index=True)
     charger_id = Column(
         String(64),
-        ForeignKey("chargers.charger_id"),
+        ForeignKey("chargers.charger_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -185,7 +185,7 @@ class CommandLog(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     charger_id = Column(
         String(64),
-        ForeignKey("chargers.charger_id"),
+        ForeignKey("chargers.charger_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

@@ -1,7 +1,13 @@
 import asyncio
 import logging
 import websockets
-from datetime import datetime
+import json
+import os
+import sys
+from datetime import datetime, timezone
+
+# Ensure project root is in path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ocpp.v16 import call
 from ocpp.v16 import ChargePoint as cp

@@ -6,8 +6,8 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
-# Ensure the project root is importable when running as a script.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Ensure project root is in path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shared.env import load_env
 

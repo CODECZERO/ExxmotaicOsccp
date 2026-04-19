@@ -2,8 +2,12 @@ import asyncio
 import websockets
 import json
 import uuid
-import time
-from datetime import datetime
+import os
+import sys
+from datetime import datetime, timezone
+
+# Ensure project root is in path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ─── Configuration ────────────────────────────────────────────────────────
 # Change to "wss://" if you enable Cloudflare "Strict" SSL. "ws://" works for Flexible.

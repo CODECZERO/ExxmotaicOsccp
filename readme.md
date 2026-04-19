@@ -166,12 +166,31 @@ cd web-client && npm install && cd ..
 
 # 3. Environment & Database
 cp .env.example .env
-python init_db.py
+python scripts/init_db.py
 ```
 
-Run the three core services in separate terminal panes:
+Run the core services in separate terminal panes:
 ```bash
-python -m api.main        # Starts API (port 5050)
-python -m core.main       # Starts WebSockets (port 5000)
-cd web-client && npm run dev  # Starts UI (port 3000)
+python -m api.main          # Starts API (port 5050)
+python -m core.main         # Starts WebSockets (port 5000)
+cd web-client && npm run dev # Starts UI (port 3000)
+```
+
+### 🛠 Troubleshooting & Maintenance
+
+If the server accumulates too many "Pending" commands (causing timeouts):
+```bash
+# Clean up stale commands (FIFO stability)
+python tests/cleanup_stale_commands.py
+```
+
+To run a verbose local hardware simulation (ABB Terra simulator):
+```bash
+python tests/test_local.py
+```
+
+### 🧪 Remote Diagnostics
+To run a full production sanity check against the cloud:
+```bash
+python tests/test_remote_servers.py
 ```

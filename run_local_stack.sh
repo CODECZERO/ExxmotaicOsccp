@@ -11,7 +11,7 @@ pkill -f "python.*main"
 sleep 2
 
 echo "--- Initializing Local DB ---"
-./venv/bin/python init_db.py
+./venv/bin/python scripts/init_db.py
 
 echo "--- Starting Services ---"
 
@@ -36,7 +36,7 @@ echo "Waiting for services to warm up (5s)..."
 sleep 5
 
 echo "--- Running Local Validation ---"
-./venv/bin/python test_local.py
+./venv/bin/python tests/test_local.py
 
 echo "--- Shutting down services ---"
 pkill -f "python.*main"

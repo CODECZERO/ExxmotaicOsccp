@@ -2,7 +2,12 @@ import asyncio
 import requests
 import websockets
 import json
+import os
+import sys
 from datetime import datetime, timezone
+
+# Ensure project root is in path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 API_PORT = 5050
 CORE_PORT = 5000
