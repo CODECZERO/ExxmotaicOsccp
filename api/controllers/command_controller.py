@@ -91,6 +91,7 @@ def remote_start(charger_id: str, payload: Dict[str, Any]) -> Tuple[Dict[str, An
                 {"id_tag": id_tag, "connector_id": connector_id},
                 charger.ocpp_version,
             )
+            db.flush()  # Populate auto-generated ID before accessing it
 
             return {
                 "message": f"RemoteStart sent to '{charger_id}'",

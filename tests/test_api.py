@@ -75,7 +75,7 @@ def override_get_db(monkeypatch):
 
 def test_health_check(client: FlaskClient):
     """Test the HAProxy health check endpoint."""
-    response = client.get("/health")
+    response = client.get("/api/health")
     assert response.status_code == 200
     assert response.get_json()["status"] == "ok"
 

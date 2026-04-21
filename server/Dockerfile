@@ -24,7 +24,7 @@ COPY shared/       shared/
 COPY server/       server/
 COPY echo/         echo/
 COPY echo-n/       echo-n/
-COPY init_db.py    .
+COPY scripts/init_db.py    .
 COPY .env.example  .env.example
 
 # ─── Runtime ─────────────────────────────────────────────────────────

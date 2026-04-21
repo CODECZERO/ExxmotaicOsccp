@@ -142,7 +142,6 @@ def delete(charger_id: str) -> Tuple[Dict[str, Any], int]:
                 return {"error": f"Charger '{charger_id}' not found"}, 404
 
             db.delete(charger)
-            db.commit()
             return {"message": f"Charger '{charger_id}' deleted"}, 200
     except Exception:
         logger.exception("Failed to delete charger %s", charger_id)

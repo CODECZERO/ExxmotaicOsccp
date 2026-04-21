@@ -36,16 +36,15 @@ def handle_start_transaction(
         **kwargs,
     )
 
-    tx_id = next(_tx_counter)
+    tx_id = next(_tx_counter)  # Fallback for no-DB mode
 
     logger.info(
-        "StartTransaction  id=%s  connector=%d  id_tag=%s  meter_start=%d  ts=%s  tx_id=%d",
+        "StartTransaction  id=%s  connector=%d  id_tag=%s  meter_start=%d  ts=%s",
         charge_point_id,
         connector_id,
         id_tag,
         meter_start,
         timestamp,
-        tx_id,
     )
 
     if db_available() and charge_point_id:
@@ -54,7 +53,7 @@ def handle_start_transaction(
                 if db is not None:
                     session = ChargingSession(
                         charger_id=charge_point_id,
-                        transaction_id=str(tx_id),
+                        transaction_id=str(tx_id),  # Temporary placeholder
                         id_tag=normalized["id_tag"],
                         connector_id=normalized["connector_id"],
                         evse_id=normalized["evse_id"],
@@ -62,6 +61,18 @@ def handle_start_transaction(
                         start_time=parse_ocpp_timestamp(timestamp),
                     )
                     db.add(session)
+                    db.flush()  # Populate auto-generated session.id
+
+                    # Use the DB-generated session PK as the stable transaction_id.
+                    # This survives server restarts, unlike the in-memory counter.
+                    session.transaction_id = str(session.id)
+                    tx_id = session.id
+
+                    logger.info(
+                        "StartTransaction persisted  tx_id=%d  session_pk=%d",
+                        tx_id,
+                        session.id,
+                    )
         except Exception:
             logger.exception(
                 "Failed to persist StartTransaction for %s", charge_point_id
@@ -71,3 +82,4 @@ def handle_start_transaction(
         transaction_id=tx_id,
         id_tag_info={"status": AuthorizationStatus.accepted},
     )
+

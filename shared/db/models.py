@@ -59,7 +59,10 @@ class Charger(Base):
         """Serialize to a plain dict for API responses using dynamic status."""
         effective_status = self.status
         now = datetime.now(tz=timezone.utc)
-        if not self.last_heartbeat or (now - self.last_heartbeat).total_seconds() > 300:
+        hb = self.last_heartbeat
+        if hb is not None and hb.tzinfo is None:
+            hb = hb.replace(tzinfo=timezone.utc)
+        if not hb or (now - hb).total_seconds() > 300:
             effective_status = "Unavailable"
 
         return {

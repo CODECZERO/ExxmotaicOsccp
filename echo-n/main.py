@@ -62,7 +62,7 @@ async def main():
         _on_connect,
         BIND_HOST,
         ECHO_N_PORT,
-        subprotocols=[OCPP_V201_SUBPROTOCOL],
+        subprotocols=[OCPP_V16_SUBPROTOCOL, OCPP_V201_SUBPROTOCOL],
     )
     # Start the command poller as a background task
     asyncio.create_task(start_command_poller())
