@@ -8,14 +8,17 @@ A production-grade EV charger backend built natively on the OCPP protocol. Physi
 
 ## ⚡ How to Connect Chargers (Sending Data)
 
-Physical chargers and testing simulators connect to the server using WebSockets. HAProxy cleanly accepts the traffic on Port 80 and routes it to the correct backend depending on the path.
+Physical chargers and testing simulators connect to the server using secure WebSockets (WSS). HAProxy terminates TLS with a Let's Encrypt certificate and routes traffic to the correct backend depending on the path.
 
 ### Live Production WebSocket URLs
 These are the endpoints you should paste into your EV Hardware interface (or use for script testing):
 
-*   **Production OCPP 1.6J:** `ws://exxomatic.therisewebd.in/ocpp/1.6/<CHARGER_NAME>`
-*   **Production OCPP 2.0.1:** `ws://exxomatic.therisewebd.in/ocpp/2.0.1/<CHARGER_NAME>`
-*   **Debug/Echo Server:** `ws://exxomatic.therisewebd.in/ocpp-echo/1.6/<CHARGER_NAME>`
+*   **Production OCPP 1.6J:** `wss://exxomatic.therisewebd.in/ocpp/1.6/<CHARGER_NAME>`
+*   **Production OCPP 2.0.1:** `wss://exxomatic.therisewebd.in/ocpp/2.0.1/<CHARGER_NAME>`
+*   **Debug Echo Server (V16):** `wss://exxomatic.therisewebd.in/ocpp-echo/1.6/<CHARGER_NAME>`
+*   **Debug Echo Server (V201):** `wss://exxomatic.therisewebd.in/ocpp-echo/2.0.1/<CHARGER_NAME>`
+*   **Debug Echo-N Server (V16):** `wss://exxomatic.therisewebd.in/ocpp-echo-n/1.6/<CHARGER_NAME>`
+*   **Debug Echo-N Server (V201):** `wss://exxomatic.therisewebd.in/ocpp-echo-n/2.0.1/<CHARGER_NAME>`
 
 ### How to test using wscat (Console Simulator)
 You can instantly simulate an EV charger and send data to the live server using `wscat`.
@@ -25,7 +28,7 @@ You can instantly simulate an EV charger and send data to the live server using 
 npm install -g wscat
 
 # 2. Connect a simulated OCPP 1.6 Charger to the LIVE Server
-wscat -c ws://exxomatic.therisewebd.in/ocpp/1.6/DEMO_CHARGER_001 --subprotocol ocpp1.6
+wscat -c wss://exxomatic.therisewebd.in/ocpp/1.6/DEMO_CHARGER_001 --subprotocol ocpp1.6
 
 # 3. Send a BootNotification payload inside the wscat terminal:
 [2, "msg-001", "BootNotification", {"chargePointVendor": "VendorX", "chargePointModel": "ModelY"}]
@@ -77,24 +80,54 @@ docker-compose up -d --build
 # HAProxy waits 30 seconds for Next.js to turn "Healthy" before routing traffic.
 ```
 
-### Step 4: Configure Cloudflare
-1.  Set DNS A-Record to point to your AWS EC2 IP.
-2.  Go to **Cloudflare SSL/TLS Settings** and set encryption mode to **"Flexible"**. (Since HAProxy handles traffic natively on Port 80, Full encryption will fail).
-3.  Ensure AWS Security Groups have Port 80 and Port 443 open.
+### Step 4: SSL Setup (Let's Encrypt)
+
+The stack auto-configures Let's Encrypt SSL certificates. It supports **TWO modes**, auto-detected based on your `.env` file:
+
+#### Mode A: Universal (HTTP-01) — Works with ANY Domain
+This mode requires no API tokens. It works as long as your domain points to the server and Port 80 is open.
+
+**Setup:**
+1. Ensure your domain's DNS A-Record points to your EC2 instance's IP.
+2. In your `.env` file, leave `CLOUDFLARE_API_TOKEN` empty:
+   ```bash
+   DOMAIN_NAME=yourdomain.com
+   LETSENCRYPT_EMAIL=admin@yourdomain.com
+   CLOUDFLARE_API_TOKEN=
+   ```
+3. Deploy the stack: `docker-compose up -d --build`
+4. *(If using Cloudflare)*: You must set the DNS record to **"DNS Only" (Grey Cloud)** temporarily during the first setup, or disable "Always Use HTTPS" so the ACME challenge on port 80 can reach the server. Once the cert is issued, you can turn the proxy (Orange Cloud) back on and set SSL to "Full (Strict)".
+
+#### Mode B: Cloudflare (DNS-01) — Supports Wildcards
+If your domain is managed by Cloudflare, this mode is recommended. It works even if the server is fully firewalled, supports wildcard certificates, and requires no DNS toggling.
+
+**Setup:**
+1. Create a Cloudflare API Token at https://dash.cloudflare.com/profile/api-tokens (Use the **"Edit zone DNS"** template).
+2. Add it to your `.env` file:
+   ```bash
+   DOMAIN_NAME=exxomatic.therisewebd.in
+   LETSENCRYPT_EMAIL=admin@example.com
+   CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+   ```
+3. Deploy the stack: `docker-compose up -d --build`
+4. Set your Cloudflare SSL/TLS mode to **"Full (Strict)"**.
+
+> **Note for both modes:** The certbot container auto-renews every 12 hours and hot-reloads HAProxy with zero downtime. Certificates are persisted in a Docker volume, surviving container restarts.
 
 ---
 
 ## 🏗 System Architecture
 
 ```text
-Internet → Cloudflare → HAProxy :80 → Flask API  :5050
-                                     → Next.js    :3000
-Charger  → Cloudflare → HAProxy :80 → OCPP Core  :5000
+Browser  → Cloudflare (TLS) → HAProxy :443 (TLS) → Flask API  :5050
+                                                   → Next.js    :3000
+Charger  → Cloudflare (TLS) → HAProxy :443 (TLS) → OCPP Core  :5000
+                              (HTTP :80 → 301 redirect to HTTPS)
 ```
 
 | Service | Port | Purpose |
 |---|---|---|
-| haproxy | 80 | Reverse proxy — routes all incoming traffic from Cloudflare via Host/Path |
+| haproxy | 80, 443 | Reverse proxy — TLS termination with Let's Encrypt, HTTP→HTTPS redirect |
 | server (api) | 5050 | Flask REST API — Dashboard logic and DB management |
 | frontend | 3000 | Next.js dashboard — UI with 0.5s real-time refresh |
 | ocpp-core | 5000 | Production OCPP WebSocket server — unified V1.6/V20.1 |
