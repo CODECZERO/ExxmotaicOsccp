@@ -51,6 +51,18 @@ def handle_start_transaction(
         try:
             with get_db() as db:
                 if db is not None:
+                    # 1. Auto-close any zombie sessions for this connector
+                    zombies = (
+                        db.query(ChargingSession)
+                        .filter_by(charger_id=charge_point_id, connector_id=normalized["connector_id"])
+                        .filter(ChargingSession.stop_time.is_(None))
+                        .all()
+                    )
+                    for z in zombies:
+                        z.stop_time = parse_ocpp_timestamp(timestamp)
+                        logger.warning("Closed zombie session %s for charger %s", z.id, charge_point_id)
+
+                    # 2. Create the new session
                     session = ChargingSession(
                         charger_id=charge_point_id,
                         transaction_id=str(tx_id),  # Temporary placeholder

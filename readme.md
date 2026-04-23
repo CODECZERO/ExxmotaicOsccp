@@ -11,29 +11,34 @@ A production-grade EV charger backend built natively on the OCPP protocol. Physi
 Physical chargers and testing simulators connect to the server using secure WebSockets (WSS). HAProxy terminates TLS with a Let's Encrypt certificate and routes traffic to the correct backend depending on the path.
 
 ### Live Production WebSocket URLs
-These are the endpoints you should paste into your EV Hardware interface (or use for script testing):
+These are the endpoints you should paste into your EV Hardware interface (or use for script testing). Use your primary domain (e.g., `exxocharger.exxomatic.in`).
 
-*   **Production OCPP 1.6J:** `wss://exxomatic.therisewebd.in/ocpp/1.6/<CHARGER_NAME>`
-*   **Production OCPP 2.0.1:** `wss://exxomatic.therisewebd.in/ocpp/2.0.1/<CHARGER_NAME>`
-*   **Debug Echo Server (V16):** `wss://exxomatic.therisewebd.in/ocpp-echo/1.6/<CHARGER_NAME>`
-*   **Debug Echo Server (V201):** `wss://exxomatic.therisewebd.in/ocpp-echo/2.0.1/<CHARGER_NAME>`
-*   **Debug Echo-N Server (V16):** `wss://exxomatic.therisewebd.in/ocpp-echo-n/1.6/<CHARGER_NAME>`
-*   **Debug Echo-N Server (V201):** `wss://exxomatic.therisewebd.in/ocpp-echo-n/2.0.1/<CHARGER_NAME>`
+*   **Production OCPP 1.6J:** `wss://<YOUR_DOMAIN>/ocpp/1.6/<CHARGER_NAME>`
+*   **Production OCPP 2.0.1:** `wss://<YOUR_DOMAIN>/ocpp/2.0.1/<CHARGER_NAME>`
+*   **Debug Echo Server (V16):** `wss://<YOUR_DOMAIN>/ocpp-echo/1.6/<CHARGER_NAME>`
+*   **Debug Echo Server (V201):** `wss://<YOUR_DOMAIN>/ocpp-echo/2.0.1/<CHARGER_NAME>`
+*   **Debug Echo-N Server (V16):** `wss://<YOUR_DOMAIN>/ocpp-echo-n/1.6/<CHARGER_NAME>`
+*   **Debug Echo-N Server (V201):** `wss://<YOUR_DOMAIN>/ocpp-echo-n/2.0.1/<CHARGER_NAME>`
+
+*(Example domains: `exxocharger.exxomatic.in` or `exxomatic.therisewebd.in`)*
 
 ### How to test using wscat (Console Simulator)
-You can instantly simulate an EV charger and send data to the live server using `wscat`.
+You can instantly simulate an EV charger and send data to the live server using `wscat`. The **Core** server saves data to the database and updates the dashboard, while the **Echo** servers simply log and mirror your messages for debugging.
 
 ```bash
 # 1. Install wscat globally if you don't have it
 npm install -g wscat
 
-# 2. Connect a simulated OCPP 1.6 Charger to the LIVE Server
-wscat -c wss://exxomatic.therisewebd.in/ocpp/1.6/DEMO_CHARGER_001 --subprotocol ocpp1.6
+# 2. Connect a simulated OCPP 1.6 Charger to the LIVE Core Server
+wscat -c wss://exxocharger.exxomatic.in/ocpp/1.6/DEMO_CHARGER_001 --subprotocol ocpp1.6
 
 # 3. Send a BootNotification payload inside the wscat terminal:
 [2, "msg-001", "BootNotification", {"chargePointVendor": "VendorX", "chargePointModel": "ModelY"}]
 
 # 4. Check the Dashboard website to watch it appear automatically!
+
+# 5. Send a Heartbeat to keep the connection alive:
+[2, "msg-002", "Heartbeat", {}]
 ```
 
 ---

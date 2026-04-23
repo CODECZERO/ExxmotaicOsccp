@@ -102,6 +102,8 @@ services:
       - API_PORT=5050
     expose:
       - "5050"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - exxomatic-net
     restart: unless-stopped
@@ -133,6 +135,8 @@ services:
     entrypoint: ["python", "-m", "core.main"]
     expose:
       - "5000"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - exxomatic-net
     restart: unless-stopped
@@ -150,6 +154,8 @@ services:
     entrypoint: ["python", "-m", "echo.main"]
     expose:
       - "8000"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - exxomatic-net
     restart: unless-stopped
@@ -167,6 +173,8 @@ services:
     entrypoint: ["python", "echo-n/main.py"]
     expose:
       - "5001"
+    volumes:
+      - ./logs:/app/logs
     networks:
       - exxomatic-net
     restart: unless-stopped

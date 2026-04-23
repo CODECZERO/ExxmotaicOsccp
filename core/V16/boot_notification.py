@@ -11,7 +11,7 @@ from ocpp.v16.enums import RegistrationStatus
 from shared.constants import HEARTBEAT_INTERVAL_S
 from shared.normalizer import normalize_boot_v16
 from shared.db.client import get_db, db_available
-from shared.db.models import Charger
+from shared.db.models import Charger, ChargingSession
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,12 @@ def handle_boot_notification(
                             last_heartbeat=datetime.now(tz=timezone.utc),
                         )
                         db.add(charger)
+
+                    # Auto-close any zombie sessions on boot
+                    zombies = db.query(ChargingSession).filter_by(charger_id=charge_point_id).filter(ChargingSession.stop_time.is_(None)).all()
+                    for z in zombies:
+                        z.stop_time = datetime.now(tz=timezone.utc)
+                        logger.warning("Closed zombie session %s for charger %s on Boot", z.id, charge_point_id)
         except Exception:
             logger.exception("Failed to persist BootNotification for %s", charge_point_id)
 

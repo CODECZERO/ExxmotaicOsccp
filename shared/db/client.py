@@ -22,8 +22,9 @@ if DATABASE_URL:
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,
-        pool_size=5,
-        max_overflow=10,
+        pool_size=1,
+        max_overflow=3,
+        pool_timeout=15,  # Wait up to 15s before failing if pool is busy
         echo=False,
     )
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

@@ -20,10 +20,9 @@ from shared.constants import CORE_PORT, BIND_HOST, LOG_LEVEL   # noqa: E402
 from core.router import detect_version, get_subprotocols, create_charge_point
 from core.dispatcher import active_connections, start_command_poller   # noqa: E402
 
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
-)
+from shared.logger import setup_logging
+
+setup_logging("ocpp-core", LOG_LEVEL)
 logger = logging.getLogger("core.main")
 
 

@@ -6,7 +6,7 @@ import os
 bind = f"0.0.0.0:{os.getenv('API_PORT', '5050')}"
 
 # ─── Worker Processes ────────────────────────────────────────────────
-workers = int(os.getenv("GUNICORN_WORKERS", "4"))
+workers = int(os.getenv("GUNICORN_WORKERS", "2"))
 worker_class = "gthread"
 threads = 20
 
@@ -16,8 +16,11 @@ graceful_timeout = 30
 keepalive = 5
 
 # ─── Logging ─────────────────────────────────────────────────────────
-accesslog = "-"
-errorlog = "-"
+_log_dir = os.getenv("LOG_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs"))
+os.makedirs(_log_dir, exist_ok=True)
+
+accesslog = os.path.join(_log_dir, "api-access.log")
+errorlog = os.path.join(_log_dir, "api-error.log")
 loglevel = os.getenv("LOG_LEVEL", "info").lower()
 
 # ─── Process Naming ──────────────────────────────────────────────────

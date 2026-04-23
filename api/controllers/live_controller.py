@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from shared.db.client import db_available, get_db
 from shared.db.models import Charger, ChargingSession, CommandLog, MeterValue
@@ -19,7 +19,11 @@ logger = logging.getLogger(__name__)
 def build_snapshot(
     charger_id: str | None = None, session_id: str | None = None
 ) -> dict[str, Any]:
-    """Build a compact snapshot used to detect live-state changes."""
+    """Build a compact snapshot used to detect live-state changes.
+
+    Optimized: uses a SINGLE SQL query to gather all aggregates instead of
+    firing 16 separate queries.  This is critical on t2.micro + remote DB.
+    """
     scope = {
         "charger_id": charger_id,
         "session_id": session_id,
@@ -48,44 +52,64 @@ def build_snapshot(
             charger = _get_charger(db, charger_id)
             session = _get_session(db, session_id)
 
-            session_query = db.query(ChargingSession)
-            meter_query = db.query(MeterValue)
-            command_query = db.query(CommandLog)
-            charger_query = db.query(Charger)
+            # ── Build ONE aggregated query ────────────────────────────
+            # Instead of 16 separate queries, we do a single round-trip.
+            filters = []
+            params: dict[str, Any] = {}
 
             if charger is not None:
-                session_query = session_query.filter_by(charger_id=charger.charger_id)
-                meter_query = meter_query.filter_by(charger_id=charger.charger_id)
-                command_query = command_query.filter_by(charger_id=charger.charger_id)
-                charger_query = charger_query.filter_by(charger_id=charger.charger_id)
+                filters.append("c.charger_id = :cid")
+                filters.append("s.charger_id = :cid")
+                filters.append("m.charger_id = :cid")
+                filters.append("cmd.charger_id = :cid")
+                params["cid"] = charger.charger_id
             elif charger_id:
-                charger_query = charger_query.filter_by(charger_id=charger_id)
-                session_query = session_query.filter_by(charger_id=charger_id)
-                meter_query = meter_query.filter_by(charger_id=charger_id)
-                command_query = command_query.filter_by(charger_id=charger_id)
+                filters.append("c.charger_id = :cid")
+                filters.append("s.charger_id = :cid")
+                filters.append("m.charger_id = :cid")
+                filters.append("cmd.charger_id = :cid")
+                params["cid"] = charger_id
+
+            c_where = f"WHERE c.charger_id = :cid" if "cid" in params else ""
+            s_where = f"WHERE s.charger_id = :cid" if "cid" in params else ""
+            m_where = f"WHERE m.charger_id = :cid" if "cid" in params else ""
+            cmd_where = f"WHERE cmd.charger_id = :cid" if "cid" in params else ""
 
             if session is not None:
-                session_query = session_query.filter_by(id=session.id)
-                meter_query = meter_query.filter_by(session_id=session.id)
-            elif session_id:
-                # Keep the requested scope in the signature even if the session is absent.
-                session_query = session_query.filter(ChargingSession.id == -1)
-                meter_query = meter_query.filter(MeterValue.id == -1)
+                s_extra = f" AND s.id = :sid" if s_where else f"WHERE s.id = :sid"
+                s_where += s_extra
+                m_extra = f" AND m.session_id = :sid" if m_where else f"WHERE m.session_id = :sid"
+                m_where += m_extra
+                params["sid"] = session.id
+
+            sql = text(f"""
+                SELECT
+                    (SELECT MAX(c.updated_at)     FROM chargers c {c_where})  AS max_charger_updated,
+                    (SELECT MAX(c.last_heartbeat)  FROM chargers c {c_where})  AS max_heartbeat,
+                    (SELECT MAX(s.created_at)      FROM sessions s {s_where}) AS max_session_created,
+                    (SELECT MAX(s.start_time)       FROM sessions s {s_where}) AS max_session_start,
+                    (SELECT MAX(s.stop_time)        FROM sessions s {s_where}) AS max_session_stop,
+                    (SELECT MAX(m.timestamp)        FROM meter_values m {m_where})      AS max_meter_ts,
+                    (SELECT MAX(cmd.created_at)     FROM command_logs cmd {cmd_where})  AS max_cmd_created,
+                    (SELECT MAX(m.id)               FROM meter_values m {m_where})      AS max_meter_id,
+                    (SELECT MAX(cmd.id)             FROM command_logs cmd {cmd_where})  AS max_command_id,
+                    (SELECT COUNT(c.id)             FROM chargers c {c_where})          AS charger_count,
+                    (SELECT COUNT(s.id)             FROM sessions s {s_where}) AS session_count,
+                    (SELECT COUNT(s.id)             FROM sessions s {s_where} {"AND" if s_where else "WHERE"} s.stop_time IS NULL) AS active_session_count,
+                    (SELECT COUNT(m.id)             FROM meter_values m {m_where})      AS meter_count,
+                    (SELECT COUNT(cmd.id)           FROM command_logs cmd {cmd_where})  AS command_count
+            """)
+
+            row = db.execute(sql, params).fetchone()
 
             latest_activity = _max_timestamp(
-                charger_query.with_entities(func.max(Charger.updated_at)).scalar(),
-                charger_query.with_entities(func.max(Charger.last_heartbeat)).scalar(),
-                session_query.with_entities(
-                    func.max(ChargingSession.created_at)
-                ).scalar(),
-                session_query.with_entities(
-                    func.max(ChargingSession.start_time)
-                ).scalar(),
-                session_query.with_entities(
-                    func.max(ChargingSession.stop_time)
-                ).scalar(),
-                meter_query.with_entities(func.max(MeterValue.timestamp)).scalar(),
-                command_query.with_entities(func.max(CommandLog.created_at)).scalar(),
+                row.max_charger_updated,
+                row.max_heartbeat,
+                row.max_session_created,
+                row.max_session_start,
+                row.max_session_stop,
+                row.max_meter_ts,
+                row.max_cmd_created,
             )
 
             snapshot = {
@@ -98,6 +122,11 @@ def build_snapshot(
                     else session_id,
                 },
                 "db_available": True,
+                "latest_activity": latest_activity.isoformat()
+                if latest_activity
+                else None,
+                "max_meter_id": row.max_meter_id or 0,
+                "max_command_id": row.max_command_id or 0,
                 "charger": {
                     "exists": charger is not None,
                     "status": charger.to_dict()["status"] if charger is not None else None,
@@ -113,28 +142,11 @@ def build_snapshot(
                     "charger_id": session.charger_id if session is not None else None,
                 },
                 "counts": {
-                    "chargers": charger_query.with_entities(
-                        func.count(Charger.id)
-                    ).scalar()
-                    or 0,
-                    "sessions": session_query.with_entities(
-                        func.count(ChargingSession.id)
-                    ).scalar()
-                    or 0,
-                    "active_sessions": session_query.filter(
-                        ChargingSession.stop_time.is_(None)
-                    )
-                    .with_entities(func.count(ChargingSession.id))
-                    .scalar()
-                    or 0,
-                    "meter_values": meter_query.with_entities(
-                        func.count(MeterValue.id)
-                    ).scalar()
-                    or 0,
-                    "commands": command_query.with_entities(
-                        func.count(CommandLog.id)
-                    ).scalar()
-                    or 0,
+                    "chargers": row.charger_count or 0,
+                    "sessions": row.session_count or 0,
+                    "active_sessions": row.active_session_count or 0,
+                    "meter_values": row.meter_count or 0,
+                    "commands": row.command_count or 0,
                 },
                 "updated_at": latest_activity.isoformat()
                 if latest_activity

@@ -83,6 +83,18 @@ def _handle_started(db, charge_point_id: str, normalized: dict, timestamp: str):
         .first()
     )
     if session is None:
+        # Auto-close any zombie sessions for this connector before creating a new one
+        conn_id = normalized.get("connector_id", 1)
+        zombies = (
+            db.query(ChargingSession)
+            .filter_by(charger_id=charge_point_id, connector_id=conn_id)
+            .filter(ChargingSession.stop_time.is_(None))
+            .all()
+        )
+        for z in zombies:
+            z.stop_time = parse_ocpp_timestamp(timestamp)
+            logger.warning("Closed zombie session %s for charger %s", z.id, charge_point_id)
+            
         session = ChargingSession(
             charger_id=charge_point_id,
             transaction_id=normalized["transaction_id"],

@@ -26,10 +26,9 @@ from shared.constants import (  # noqa: E402
 from core.router import detect_version, create_charge_point  # noqa: E402
 from core.dispatcher import active_connections, start_command_poller  # noqa: E402
 
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
-)
+from shared.logger import setup_logging
+
+setup_logging("ocpp-echo-n", LOG_LEVEL)
 logger = logging.getLogger("echo-n")
 
 

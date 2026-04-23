@@ -12,7 +12,7 @@ from api.controllers import live_controller
 
 live_bp = Blueprint("live", __name__, url_prefix="/api")
 
-STREAM_POLL_INTERVAL_S = 0.5
+STREAM_POLL_INTERVAL_S = 2.0
 STREAM_KEEPALIVE_INTERVAL_S = 15.0
 
 
